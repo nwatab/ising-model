@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 
-export default function ParamConfig({
+export default function ConfigPanel({
   betaJ,
   betaH,
 }: {
@@ -34,7 +34,7 @@ export default function ParamConfig({
   );
   return (
     <form className="text-sm mb-2">
-      <div>Parameters:</div>
+      <div className="mb-4">Parameters:</div>
       <div>
         <label className="block text-sm font-medium mb-1">
           J/k<sub>B</sub>T: {betaJ.toFixed(1)}
@@ -42,14 +42,16 @@ export default function ParamConfig({
         <input
           type="range"
           name="betaJ"
-          min="-0.3"
-          max="0.3"
+          min="-0.5"
+          max="0.5"
           step="0.1"
           onChange={(e) => handleParameterChange("beta_j", e.target.value)}
           defaultValue={betaJ}
           className="w-full"
         />
-        <div className="text-xs text-gray-400">(Critical point ≈ 0.22)</div>
+        <div className="text-xs text-gray-400 mb-4">
+          (Critical point ≈ 0.22)
+        </div>
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">

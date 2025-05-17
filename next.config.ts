@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export",
   reactStrictMode: true,
-  staticPageGenerationTimeout: 600,
+  staticPageGenerationTimeout: 15 * 60,
 };
 
 module.exports = nextConfig;
