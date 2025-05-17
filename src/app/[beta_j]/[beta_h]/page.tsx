@@ -2,11 +2,11 @@ import { Lattice } from "@/components/lattice";
 import ParamConfig from "@/components/param-config";
 import {
   calculateMagnetization,
-  calculateSpinEnergy,
   calculateTotalEnergy,
   getIndex,
   initializeRandomLattice,
-  simulateMsimulateMetropolistlopolis,
+  simulateWolff,
+  wolffStep,
 } from "@/services/ising";
 import { Suspense } from "react";
 
@@ -32,12 +32,13 @@ export default async function Home({
   const N = 32; // Size of the lattice (N x N x N)
 
   const initialLattice = initializeRandomLattice(N);
-  const lattice = simulateMsimulateMetropolistlopolis(
+  const lattice = simulateWolff(
     initialLattice,
     betaJ,
-    betaH,
     N,
-    calculateSpinEnergy
+    1000,
+    getIndex,
+    wolffStep
   );
   const energy = calculateTotalEnergy(lattice, betaJ, betaH, N);
   const magnetization = calculateMagnetization(lattice);
