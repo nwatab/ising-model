@@ -5,7 +5,7 @@ This project provides an interactive web-based simulation of the 3D Ising model,
 ## Features
 
 - Real-time 3D Ising model simulation with visualization
-- Adjustable temperature (J/kBT) parameter, including near the critical point (≈0.22)
+- Adjustable temperature ($J/k_{B}T$) parameter, including near the critical point (≈0.22)
 - Adjustable external magnetic field ($$h/k_{B}T$$)
 - Interactive visualization of a 2D slice through the 3D lattice
 - Real-time energy and magnetization measurements
@@ -20,36 +20,22 @@ H = -J \sum_{nearest\; i, j} s_{i} s_{j} - h \sum_{i} s_{i}
 
 Where:
 
-- $$J$$ is the coupling constant between neighboring spins
-- $$h$$ is the external magnetic field
-- $$s_{i}$$ is the spin at site i
+- $$J \in \mathbb{R}$$ is the coupling constant between neighboring spins
+- $$h \in \mathbb{R}$$ is the external magnetic field
+- $$s_{i} \in \lbrace-1, 1\rbrace$$ is the spin at site $i$
 
 The simulation uses the Metropolis algorithm to sample configurations according to the Boltzmann distribution. The dimensionless parameters used are:
 
 - $$\beta J$$ $$(J/k_{B}T)$$: Coupling strength divided by temperature
 - $$\beta h$$ $$(h/k_{B}T)$$: Field strength divided by temperature
 
-## Getting Started
+## Setup
 
 First, install dependencies and run the development server:
 
 ```bash
-npm install
-# or
-yarn
-# or
 pnpm install
-# or
-bun install
-
-# Then start the development server
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see and interact with the simulation.
@@ -63,12 +49,6 @@ The simulation:
 - Visualizes a central 2D slice of the 3D lattice
 - Updates the display every 200×N³ attempted spin flips
 - Runs until 32⁵ (~33.5 million) total spin flips are attempted
-
-## Technologies Used
-
-- [Next.js](https://nextjs.org) - React framework
-- [React](https://reactjs.org) - UI library
-- [Tailwind CSS](https://tailwindcss.com) - Styling
 
 ## License
 
