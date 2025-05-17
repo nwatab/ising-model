@@ -10,9 +10,25 @@ import {
 } from "@/services/ising";
 import { Suspense } from "react";
 
-export default async function Home() {
-  const betaJ = 0;
-  const betaH = 0;
+export function generateStaticParams() {
+  const values = [-0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3] as const;
+  const params = values.flatMap((beta_j) =>
+    values.flatMap((beta_h) => ({
+      beta_j: beta_j.toFixed(1),
+      beta_h: beta_h.toFixed(1),
+    }))
+  );
+  return params;
+}
+
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ beta_j: string; beta_h: string }>;
+}) {
+  const { beta_j, beta_h } = await params;
+  const betaJ = parseFloat(beta_j) || 0;
+  const betaH = parseFloat(beta_h) || 0;
   const N = 32; // Size of the lattice (N x N x N)
 
   const initialLattice = initializeRandomLattice(N);
