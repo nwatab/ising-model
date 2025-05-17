@@ -1,10 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 3D Ising Model Simulation
+
+This project provides an interactive web-based simulation of the 3D Ising model, a mathematical model in statistical mechanics used to study phase transitions and critical phenomena in ferromagnetic materials.
+
+## Features
+
+- Real-time 3D Ising model simulation with visualization
+- Adjustable temperature (J/kBT) parameter, including near the critical point (≈0.22)
+- Adjustable external magnetic field ($$h/k_{B}T$$)
+- Interactive visualization of a 2D slice through the 3D lattice
+- Real-time energy and magnetization measurements
+
+## Physics Background
+
+The Ising model represents a lattice of spins that can be in one of two states: up (+1) or down (-1). Each spin interacts with its nearest neighbors. The Hamiltonian (energy) of the system is given by:
+
+```math
+H = -J \sum_{nearest\; i, j} s_{i} s_{j} - h \sum_{i} s_{i}
+```
+
+Where:
+
+- $$J$$ is the coupling constant between neighboring spins
+- $$h$$ is the external magnetic field
+- $$s_{i}$$ is the spin at site i
+
+The simulation uses the Metropolis algorithm to sample configurations according to the Boltzmann distribution. The dimensionless parameters used are:
+
+- $$\beta J$$ $$(J/k_{B}T)$$: Coupling strength divided by temperature
+- $$\beta h$$ $$(h/k_{B}T)$$: Field strength divided by temperature
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies and run the development server:
 
 ```bash
+npm install
+# or
+yarn
+# or
+pnpm install
+# or
+bun install
+
+# Then start the development server
 npm run dev
 # or
 yarn dev
@@ -14,23 +52,24 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see and interact with the simulation.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Implementation Details
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The simulation:
 
-## Learn More
+- Uses a 32×32×32 cubic lattice with periodic boundary conditions
+- Implements the Metropolis Monte Carlo algorithm for spin updates
+- Visualizes a central 2D slice of the 3D lattice
+- Updates the display every 200×N³ attempted spin flips
+- Runs until 32⁵ (~33.5 million) total spin flips are attempted
 
-To learn more about Next.js, take a look at the following resources:
+## Technologies Used
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Next.js](https://nextjs.org) - React framework
+- [React](https://reactjs.org) - UI library
+- [Tailwind CSS](https://tailwindcss.com) - Styling
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[MIT](https://choosealicense.com/licenses/mit/)
