@@ -208,14 +208,14 @@ export default function Home() {
         const idx = getIndex(x, y, z);
         const spin = latticeRef.current[idx];
 
-        // Color: red for up, blue for down
-        ctx.fillStyle = spin > 0 ? "red" : "blue";
+        // Color: orange-800 for up, cyan-800 for down
+        ctx.fillStyle = spin > 0 ? "#9a3412" : "#155e75"; // orange-800 and cyan-800
 
         // Draw the cell
         ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
 
         // Draw cell border
-        ctx.strokeStyle = "#333";
+        ctx.strokeStyle = "#27272a"; // zinc-800
         ctx.lineWidth = 0.5;
         ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
       }
