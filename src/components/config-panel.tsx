@@ -60,8 +60,8 @@ export default function ConfigPanel({
         <input
           type="range"
           name="betaH"
-          min="-0.3"
-          max="0.3"
+          min="-0.2"
+          max="0.2"
           step="0.1"
           onChange={(e) => handleParameterChange("beta_h", e.target.value)}
           defaultValue={betaH}

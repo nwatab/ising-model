@@ -1,4 +1,5 @@
 import { GetIndexFn, SpinArray } from "@/types";
+import { getIndex } from "./ising";
 
 type CalculateSpinEnergy = (
   lat: SpinArray,
@@ -44,55 +45,83 @@ export const calculateSpinEnergy: CalculateSpinEnergy = (
   return energy;
 };
 
-/**
- * @deprecated
- */
-export function simulateMsimulateMetropolistlopolis(
+export function simulateMetropoliseSweep(
   lattice: SpinArray,
   betaJ: number,
   betaH: number,
   N: number,
   calculateSpinEnergy: CalculateSpinEnergy,
   getIndex: GetIndexFn
-): SpinArray {
+) {
   const lat = new Int8Array(lattice) as SpinArray;
-  // Simulate Metropolis algorithm (N^5) times
-  for (let i = 0; i < N ** 2; i++) {
-    // flip spins for N^3 times randomly.
-    for (let j = 0; j < N ** 3; j++) {
-      const x = Math.floor(Math.random() * N);
-      const y = Math.floor(Math.random() * N);
-      const z = Math.floor(Math.random() * N);
-      const idx = getIndex(x, y, z, N);
+  for (let j = 0; j < N ** 3; j++) {
+    const x = Math.floor(Math.random() * N);
+    const y = Math.floor(Math.random() * N);
+    const z = Math.floor(Math.random() * N);
+    const idx = getIndex(x, y, z, N);
 
-      const oldEnergy = calculateSpinEnergy(
-        lat,
-        x,
-        y,
-        z,
-        N,
-        betaJ,
-        betaH,
-        getIndex
-      );
-      lat[idx] *= -1; // Flip the spin
-      const newEnergy = calculateSpinEnergy(
-        lat,
-        x,
-        y,
-        z,
-        N,
-        betaJ,
-        betaH,
-        getIndex
-      );
-      const deltaEnergy = newEnergy - oldEnergy;
-      const acceptProbability = Math.exp(-deltaEnergy);
-      if (deltaEnergy > 0 && Math.random() > acceptProbability) {
-        lat[idx] *= -1; // Revert the spin flip
-      }
+    const oldEnergy = calculateSpinEnergy(
+      lat,
+      x,
+      y,
+      z,
+      N,
+      betaJ,
+      betaH,
+      getIndex
+    );
+    lat[idx] *= -1; // Flip the spin
+    const newEnergy = calculateSpinEnergy(
+      lat,
+      x,
+      y,
+      z,
+      N,
+      betaJ,
+      betaH,
+      getIndex
+    );
+    const deltaEnergy = newEnergy - oldEnergy;
+    const acceptProbability = Math.exp(-deltaEnergy);
+    if (deltaEnergy > 0 && Math.random() > acceptProbability) {
+      lat[idx] *= -1; // Revert the spin flip
     }
   }
+  return lat;
+}
 
-  return lat as SpinArray;
+export function simulateMetropolis(
+  lattice: SpinArray,
+  betaJ: number,
+  betaH: number,
+  N: number,
+  sweeps: number
+): SpinArray {
+  const result = Array.from({ length: sweeps }).reduce<SpinArray>(
+    (acc) => {
+      return simulateMetropoliseSweep(
+        acc,
+        betaJ,
+        betaH,
+        N,
+        calculateSpinEnergy,
+        getIndex
+      );
+    },
+    new Int8Array(lattice) as SpinArray
+  );
+
+  return result;
+}
+/**
+ * Estimate the number of sweeps needed for convergence.
+ */
+export function estimateSweeps(betaJ: number): number {
+  const betaJc = 0.221654;
+  const nu = 0.63;
+  const z = 2;
+  const tau = Math.abs(betaJ - betaJc) ** (-nu * z);
+  const C = 10;
+  const sweeps = C * tau;
+  return Math.trunc(sweeps);
 }
