@@ -14,9 +14,9 @@ export default function ConfigSection({
   setBetaH: (value: number) => void;
 }) {
   return (
-    <form className="text-sm mb-2">
-      <div className="mb-4">Parameters:</div>
-      <div>
+    <form className="text-sm mb-8">
+      <h2 className="text-lg font-bold mb-4">Parameters</h2>
+      <div className="mb-8">
         <label className="block text-sm font-medium mb-1">
           <span className="italic">J</span>/
           <span className="italic">
