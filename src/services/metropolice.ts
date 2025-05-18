@@ -153,6 +153,7 @@ export function sweepEnergiesMetropolis(
   const SWEEPS = 200;
   const SWEEPS_NEAR_CRITICAL = 800;
   const SWEEPS_MEASURE = 10; // to measure the energy and magnetization
+  const SWEEPS_MEASURE_INTERVAL = 1;
   const spontaneousSymmetryBreakingSign = 1;
   // initialize [betaJs length][betaHs length]
   const result: {
@@ -207,7 +208,8 @@ export function sweepEnergiesMetropolis(
       betaJ,
       betaH,
       N,
-      SWEEPS_MEASURE
+      SWEEPS_MEASURE,
+      SWEEPS_MEASURE_INTERVAL
     );
     result[i][betaHZeroIndex] = {
       lattice,
@@ -230,7 +232,8 @@ export function sweepEnergiesMetropolis(
       betaJ,
       betaH,
       N,
-      SWEEPS_MEASURE
+      SWEEPS_MEASURE,
+      SWEEPS_MEASURE_INTERVAL
     );
     result[i][betaHZeroIndex] = {
       lattice,
@@ -251,7 +254,8 @@ export function sweepEnergiesMetropolis(
       betaJ,
       betaH,
       N,
-      SWEEPS_MEASURE
+      SWEEPS_MEASURE,
+      SWEEPS_MEASURE_INTERVAL
     );
     result[betaJZeroIndex][j] = {
       lattice,
@@ -272,7 +276,8 @@ export function sweepEnergiesMetropolis(
       betaJ,
       betaH,
       N,
-      SWEEPS_MEASURE
+      SWEEPS_MEASURE,
+      SWEEPS_MEASURE_INTERVAL
     );
     result[betaJZeroIndex][j] = {
       lattice,
@@ -312,7 +317,8 @@ export function sweepEnergiesMetropolis(
         betaJ,
         betaH,
         N,
-        SWEEPS_MEASURE
+        SWEEPS_MEASURE,
+        SWEEPS_MEASURE_INTERVAL
       );
       result[i][j] = {
         lattice,
@@ -354,7 +360,8 @@ export function sweepEnergiesMetropolis(
         betaJ,
         betaH,
         N,
-        SWEEPS_MEASURE
+        SWEEPS_MEASURE,
+        SWEEPS_MEASURE_INTERVAL
       );
       result[i][j] = {
         lattice,
@@ -389,7 +396,8 @@ export function sweepEnergiesMetropolis(
         betaJ,
         betaH,
         N,
-        SWEEPS_MEASURE
+        SWEEPS_MEASURE,
+        SWEEPS_MEASURE_INTERVAL
       );
       result[i][j] = {
         lattice,
@@ -423,7 +431,8 @@ export function sweepEnergiesMetropolis(
         betaJ,
         betaH,
         N,
-        SWEEPS_MEASURE
+        SWEEPS_MEASURE,
+        SWEEPS_MEASURE_INTERVAL
       );
       result[i][j] = {
         lattice,
@@ -454,7 +463,8 @@ function calculateMeasurements(
   betaJ: number,
   betaH: number,
   N: number,
-  SWEEPS_MEASURE: number
+  SWEEPS_MEASURE: number,
+  SWEEPS_MEASURE_INTERVAL: number
 ) {
   const { energies, magnetizations } = Array.from<{
     energies: number[];
@@ -464,7 +474,13 @@ function calculateMeasurements(
     length: SWEEPS_MEASURE - 1,
   }).reduce(
     (acc) => {
-      const nextLattice = simulateMetropolis(lattice, betaJ, betaH, N, 1);
+      const nextLattice = simulateMetropolis(
+        lattice,
+        betaJ,
+        betaH,
+        N,
+        SWEEPS_MEASURE_INTERVAL
+      );
       acc.energies.push(calculateTotalEnergy(nextLattice, betaJ, betaH, N));
       acc.magnetizations.push(calculateMagnetization(nextLattice));
       acc.lattices.push(nextLattice);
