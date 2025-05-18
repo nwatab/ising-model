@@ -149,7 +149,11 @@ export function sweepEnergiesMetropolis(
   energy: number;
   magnetization: number;
 }[][] {
-  const deltabetaH = 1e-6; // small value to fall down to +1 for spontaneous symmetry breaking
+  const deltaBetaH = 0; // small value to fall down to +1 for spontaneous symmetry breaking. zero for now.
+  const SWEEPS = 200;
+  const SWEEPS_NEAR_CRITICAL = 800;
+  const SWEEPS_MEASURE = 10; // to measure the energy and magnetization
+  const spontaneousSymmetryBreakingSign = 1;
   // initialize [betaJs length][betaHs length]
   const result: {
     lattice: SpinArray;
@@ -184,19 +188,33 @@ export function sweepEnergiesMetropolis(
     const betaJ = betaJs[i];
     const betaH = 0;
     const sweeps = estimateSweeps(betaJ);
-    const lattice = simulateMetropolis(
+    const simLattice = simulateMetropolis(
       initLattice,
       betaJ,
-      betaH + deltabetaH,
+      betaH + deltaBetaH,
       N,
       sweeps
+    );
+    const lattice =
+      betaJ > 0.22
+        ? flipMagnetizationDirection(
+            simLattice,
+            spontaneousSymmetryBreakingSign
+          )
+        : simLattice;
+    const { energy, magnetization } = calculateMeasurements(
+      lattice,
+      betaJ,
+      betaH,
+      N,
+      SWEEPS_MEASURE
     );
     result[i][betaHZeroIndex] = {
       lattice,
       betaJ,
       betaH,
-      energy: calculateTotalEnergy(lattice, betaJ, betaH, N),
-      magnetization: calculateMagnetization(lattice),
+      energy,
+      magnetization,
     };
   }
 
@@ -206,12 +224,20 @@ export function sweepEnergiesMetropolis(
     const betaH = 0;
     const sweeps = estimateSweeps(betaJ);
     const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
+
+    const { energy, magnetization } = calculateMeasurements(
+      lattice,
+      betaJ,
+      betaH,
+      N,
+      SWEEPS_MEASURE
+    );
     result[i][betaHZeroIndex] = {
       lattice,
       betaJ,
       betaH,
-      energy: calculateTotalEnergy(lattice, betaJ, betaH, N),
-      magnetization: calculateMagnetization(lattice),
+      energy,
+      magnetization,
     };
   }
   // initialize betaJs = 0 and positive betaHs
@@ -220,12 +246,19 @@ export function sweepEnergiesMetropolis(
     const betaH = betaHs[j];
     const sweeps = estimateSweeps(betaH);
     const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
+    const { energy, magnetization } = calculateMeasurements(
+      lattice,
+      betaJ,
+      betaH,
+      N,
+      SWEEPS_MEASURE
+    );
     result[betaJZeroIndex][j] = {
       lattice,
       betaJ,
       betaH,
-      energy: calculateTotalEnergy(lattice, betaJ, betaH, N),
-      magnetization: calculateMagnetization(lattice),
+      energy,
+      magnetization,
     };
   }
   // initialize betaJs = 0 and negative betaHs
@@ -234,12 +267,19 @@ export function sweepEnergiesMetropolis(
     const betaH = betaHs[j];
     const sweeps = estimateSweeps(betaH);
     const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
+    const { energy, magnetization } = calculateMeasurements(
+      lattice,
+      betaJ,
+      betaH,
+      N,
+      SWEEPS_MEASURE
+    );
     result[betaJZeroIndex][j] = {
       lattice,
       betaJ,
       betaH,
-      energy: calculateTotalEnergy(lattice, betaJ, betaH, N),
-      magnetization: calculateMagnetization(lattice),
+      energy,
+      magnetization,
     };
   }
   // sweep for positive betaJs and positive betaHs
@@ -251,20 +291,35 @@ export function sweepEnergiesMetropolis(
         result[i - 1][j].lattice,
         result[i][j - 1].lattice
       );
-      const sweeps = Math.abs(betaJ - 0.22) < 0.2 ? 1000 : 200;
-      const lattice = simulateMetropolis(
+      const sweeps =
+        Math.abs(betaJ - 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
+      const simLattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltabetaH,
+        betaH + deltaBetaH,
         N,
         sweeps
+      );
+      const lattice =
+        betaJ > 0.22
+          ? flipMagnetizationDirection(
+              simLattice,
+              spontaneousSymmetryBreakingSign
+            )
+          : simLattice;
+      const { energy, magnetization } = calculateMeasurements(
+        lattice,
+        betaJ,
+        betaH,
+        N,
+        SWEEPS_MEASURE
       );
       result[i][j] = {
         lattice,
         betaJ,
         betaH,
-        energy: calculateTotalEnergy(lattice, betaJ, betaH, N),
-        magnetization: calculateMagnetization(lattice),
+        energy,
+        magnetization,
       };
     }
   }
@@ -278,20 +333,35 @@ export function sweepEnergiesMetropolis(
         result[i - 1][j].lattice,
         result[i][j + 1].lattice
       );
-      const sweeps = Math.abs(betaJ - 0.22) < 0.2 ? 1000 : 200;
-      const lattice = simulateMetropolis(
+      const sweeps =
+        Math.abs(betaJ - 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
+      const simLattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltabetaH,
+        betaH + deltaBetaH,
         N,
         sweeps
+      );
+      const lattice =
+        betaJ > 0.22
+          ? flipMagnetizationDirection(
+              simLattice,
+              spontaneousSymmetryBreakingSign
+            )
+          : simLattice;
+      const { energy, magnetization } = calculateMeasurements(
+        lattice,
+        betaJ,
+        betaH,
+        N,
+        SWEEPS_MEASURE
       );
       result[i][j] = {
         lattice,
         betaJ,
         betaH,
-        energy: calculateTotalEnergy(lattice, betaJ, betaH, N),
-        magnetization: calculateMagnetization(lattice),
+        energy,
+        magnetization,
       };
     }
   }
@@ -305,20 +375,28 @@ export function sweepEnergiesMetropolis(
         result[i + 1][j].lattice,
         result[i][j - 1].lattice
       );
-      const sweeps = Math.abs(betaJ + 0.22) < 0.2 ? 1000 : 200;
+      const sweeps =
+        Math.abs(betaJ + 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltabetaH,
+        betaH + deltaBetaH,
         N,
         sweeps
+      );
+      const { energy, magnetization } = calculateMeasurements(
+        lattice,
+        betaJ,
+        betaH,
+        N,
+        SWEEPS_MEASURE
       );
       result[i][j] = {
         lattice,
         betaJ,
         betaH,
-        energy: calculateTotalEnergy(lattice, betaJ, betaH, N),
-        magnetization: calculateMagnetization(lattice),
+        energy,
+        magnetization,
       };
     }
   }
@@ -331,20 +409,28 @@ export function sweepEnergiesMetropolis(
         result[i + 1][j].lattice,
         result[i][j + 1].lattice
       );
-      const sweeps = Math.abs(betaJ + 0.22) < 0.2 ? 1000 : 100;
+      const sweeps =
+        Math.abs(betaJ + 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltabetaH,
+        betaH + deltaBetaH,
         N,
         sweeps
+      );
+      const { energy, magnetization } = calculateMeasurements(
+        lattice,
+        betaJ,
+        betaH,
+        N,
+        SWEEPS_MEASURE
       );
       result[i][j] = {
         lattice,
         betaJ,
         betaH,
-        energy: calculateTotalEnergy(lattice, betaJ, betaH, N),
-        magnetization: calculateMagnetization(lattice),
+        energy,
+        magnetization,
       };
     }
   }
@@ -361,4 +447,54 @@ function averageLatices(latticeA: SpinArray, latticeB: SpinArray) {
       return spin;
     }) as SpinArray;
   return ave;
+}
+
+function calculateMeasurements(
+  lattice: SpinArray,
+  betaJ: number,
+  betaH: number,
+  N: number,
+  SWEEPS_MEASURE: number
+) {
+  const { energies, magnetizations } = Array.from<{
+    energies: number[];
+    magnetizations: number[];
+    lattices: SpinArray[];
+  }>({
+    length: SWEEPS_MEASURE - 1,
+  }).reduce(
+    (acc) => {
+      const nextLattice = simulateMetropolis(lattice, betaJ, betaH, N, 1);
+      acc.energies.push(calculateTotalEnergy(nextLattice, betaJ, betaH, N));
+      acc.magnetizations.push(calculateMagnetization(nextLattice));
+      acc.lattices.push(nextLattice);
+      return acc;
+    },
+    {
+      energies: [calculateTotalEnergy(lattice, betaJ, betaH, N)],
+      magnetizations: [calculateMagnetization(lattice)],
+      lattices: [lattice],
+    }
+  );
+  const energy = energies.reduce((a, b) => a + b, 0) / energies.length;
+  const magnetization =
+    magnetizations.reduce((a, b) => a + b, 0) / magnetizations.length;
+  return {
+    energy,
+    magnetization,
+  };
+}
+
+function flipMagnetizationDirection(lattice: SpinArray, spin: 1 | -1) {
+  const netMagnetization = lattice.reduce((a, b) => a + b, 0);
+  const mSign = Math.sign(netMagnetization);
+
+  // If magnetization is already in the desired direction or too close to zero, return
+  if (mSign === spin || Math.abs(netMagnetization) < lattice.length * 0.05) {
+    return lattice;
+  }
+
+  // Flip all spins if magnetization is in the wrong direction
+  const flippedLattice = lattice.map((s) => -s) as SpinArray;
+  return flippedLattice;
 }
