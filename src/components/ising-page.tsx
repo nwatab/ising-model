@@ -2,7 +2,7 @@
 import { beta_hs, beta_js } from "@/config";
 import { getIndex } from "@/services/ising";
 import { generateSVGDataURL, getTileSize } from "@/services/svg-lattice";
-import { SpinArray } from "@/types";
+import { SimulationResult } from "@/types";
 import { useState } from "react";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
@@ -10,13 +10,7 @@ import StatisticalInfo from "./statistical-info";
 export function IsingPage({
   simulationResults,
 }: {
-  simulationResults: {
-    lattice: SpinArray;
-    betaJ: number;
-    betaH: number;
-    energy: number;
-    magnetization: number;
-  }[][];
+  simulationResults: SimulationResult[][];
 }) {
   const N = parseInt(process.env.NEXT_PUBLIC_N ?? "32");
   const [betaJ, setBetaJ] = useState(0);
@@ -52,6 +46,8 @@ export function IsingPage({
         <StatisticalInfo
           energy={result.energy}
           magnetization={result.magnetization}
+          stdevEnergy={result.stdevEnergy}
+          stdevMagnetization={result.stdevMagnetization}
         />
       </div>
     </div>

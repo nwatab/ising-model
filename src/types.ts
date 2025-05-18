@@ -3,3 +3,13 @@ export type SpinArray = Int8Array & {
 };
 
 export type GetIndexFn = (x: number, y: number, z: number, N: number) => number;
+
+export type SimulationResult = {
+  lattice: SpinArray;
+  betaJ: number;
+  betaH: number;
+  energy: number;
+  magnetization: number;
+  stdevEnergy: number;
+  stdevMagnetization: number;
+};
