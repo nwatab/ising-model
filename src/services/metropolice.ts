@@ -1,4 +1,4 @@
-import { GetIndexFn, SimulationResult, SpinArray } from "@/types";
+import { GetIndexFn, SpinArray } from "@/types";
 import {
   calculateMagnetization,
   calculateTotalEnergy,
@@ -142,7 +142,7 @@ export function sweepEnergiesMetropolis(
   betaJs: readonly number[], // -betaJ, ..., 0, ..., betaJ
   betaHs: readonly number[], // -betaH, ..., 0, ..., betaH
   N: number
-): SimulationResult[][] {
+) {
   const deltaBetaH = 0; // small value to fall down to +1 for spontaneous symmetry breaking. zero for now.
   const SWEEPS = 200;
   const SWEEPS_NEAR_CRITICAL = 800;
@@ -150,18 +150,24 @@ export function sweepEnergiesMetropolis(
   const SWEEPS_MEASURE_INTERVAL = 1;
   const spontaneousSymmetryBreakingSign = 1;
   // initialize [betaJs length][betaHs length]
-  const result: SimulationResult[][] = Array.from(
-    { length: betaJs.length },
-    () =>
-      Array.from({ length: betaHs.length }, () => ({
-        lattice: new Int8Array(N ** 3) as SpinArray,
-        betaJ: 0,
-        betaH: 0,
-        energy: 0,
-        magnetization: 0,
-        stdevEnergy: 0,
-        stdevMagnetization: 0,
-      }))
+  const result: {
+    lattice: SpinArray;
+    betaJ: number;
+    betaH: number;
+    energy: number;
+    magnetization: number;
+    stdevEnergy: number;
+    stdevMagnetization: number;
+  }[][] = Array.from({ length: betaJs.length }, () =>
+    Array.from({ length: betaHs.length }, () => ({
+      lattice: new Int8Array(N ** 3) as SpinArray,
+      betaJ: 0,
+      betaH: 0,
+      energy: 0,
+      magnetization: 0,
+      stdevEnergy: 0,
+      stdevMagnetization: 0,
+    }))
   );
   // initialize lattice where J =0 and h = 0
   const initLattice = initializeRandomLattice(N);

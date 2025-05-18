@@ -1,8 +1,6 @@
 "use client";
 import { beta_hs, beta_js } from "@/config";
-import { getIndex } from "@/services/ising";
-import { generateSVGDataURL, getTileSize } from "@/services/svg-lattice";
-import { SimulationResult } from "@/types";
+import { getTileSize } from "@/services/svg-lattice";
 import { useState } from "react";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
@@ -10,27 +8,31 @@ import StatisticalInfo from "./statistical-info";
 export function IsingPage({
   simulationResults,
 }: {
-  simulationResults: SimulationResult[][];
+  simulationResults: {
+    svgDataUrl: string;
+    betaJ: number;
+    betaH: number;
+    energy: number;
+    magnetization: number;
+    stdevEnergy: number;
+    stdevMagnetization: number;
+  }[][];
 }) {
   const N = parseInt(process.env.NEXT_PUBLIC_N ?? "32");
   const [betaJ, setBetaJ] = useState(0);
   const [betaH, setBetaH] = useState(0);
-  // pick lattice based on betaJ and betaH. find inex of betaJ and betaH and get the lattice
-
   const betaJIndex = beta_js.findIndex((v) => v === betaJ);
   const betaHIndex = beta_hs.findIndex((v) => v === betaH);
   if (betaJIndex === -1 || betaHIndex === -1) {
     throw new Error("Invalid betaJ or betaH: " + betaJ + ", " + betaH);
   }
   const result = simulationResults[betaJIndex][betaHIndex];
-  const lattice = result.lattice;
-  const svgDataUrl = generateSVGDataURL(lattice, N, getIndex);
   const tileSize = getTileSize(16, N);
   return (
     <div
       className="relative h-screen w-screen bg-gray-900 text-white"
       style={{
-        backgroundImage: `url("${svgDataUrl}")`,
+        backgroundImage: `url("${result.svgDataUrl}")`,
         backgroundRepeat: "repeat",
         backgroundSize: `${tileSize}px ${tileSize}px`,
       }}
