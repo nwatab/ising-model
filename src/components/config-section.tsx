@@ -1,5 +1,7 @@
 "use client";
 
+import { beta_hs, beta_js } from "@/config";
+
 export default function ConfigSection({
   betaJ,
   betaH,
@@ -25,8 +27,8 @@ export default function ConfigSection({
         <input
           type="range"
           name="betaJ"
-          min="-0.5"
-          max="0.5"
+          min={beta_js[0]}
+          max={beta_js[beta_js.length - 1]}
           step="0.1"
           value={betaJ}
           onChange={(e) => setBetaJ(parseFloat(e.target.value) || 0)}
@@ -47,12 +49,12 @@ export default function ConfigSection({
         <input
           type="range"
           name="betaH"
-          min="-0.2"
-          max="0.2"
+          min={beta_hs[0]}
+          max={beta_hs[beta_hs.length - 1]}
           step="0.1"
           value={betaH}
           onChange={(e) => setBetaH(parseFloat(e.target.value) || 0)}
-          className="w-full"
+          className={`w-${beta_hs.length}/${beta_js.length} mx-auto block`}
         />
       </div>
     </form>
