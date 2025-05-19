@@ -1,3 +1,30 @@
+import { decomposeToScientific } from "@/utils";
+
+function ShowScientific({ value, error }: { value: number; error: number }) {
+  const [co, errCo, pow] = decomposeToScientific(value, error);
+  if (pow === 0) {
+    return (
+      <span className="ml-1">
+        {co.toFixed(3)}
+        <span className="text-xs">
+          <span className="mx-1">&plusmn;</span>
+          {errCo.toFixed(2)}
+        </span>
+      </span>
+    );
+  }
+  return (
+    <span className="ml-1">
+      ({co.toFixed(3)}
+      <span className="text-xs">
+        <span className="mx-1">&plusmn;</span>
+        {errCo.toFixed(2)}
+      </span>
+      ) &times; 10<sup>{pow}</sup>
+    </span>
+  );
+}
+
 export default function StatisticalInfo({
   energy,
   magnetization,
@@ -20,25 +47,13 @@ export default function StatisticalInfo({
           <span className="italic">T</span>
           ):
         </div>
-        <span className="ml-1">
-          {energy.toFixed(3)}
-          <span className="text-xs">
-            <span className="mx-1">&plusmn;</span>
-            {stdevEnergy.toFixed(2)}
-          </span>
-        </span>
+        <ShowScientific value={energy} error={stdevEnergy} />
       </div>
       <div className="flex" title="±sqrt(3(T-Tc)/Tc) at T ~ Tc, h = 0">
         <div className="w-36">
           Magnetization (<span className="italic">M</span>):
         </div>
-        <span className="ml-1">
-          {magnetization.toFixed(3)}
-          <span className="text-xs">
-            <span className="mx-1">&plusmn;</span>
-            {stdevMagnetization.toFixed(2)}
-          </span>
-        </span>
+        <ShowScientific value={magnetization} error={stdevMagnetization} />
       </div>
     </div>
   );
