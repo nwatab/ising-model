@@ -143,8 +143,8 @@ export function sweepEnergiesMetropolis(
   betaHs: readonly number[], // -betaH, ..., 0, ..., betaH
   N: number
 ) {
-  const SWEEPS_PARAMAGNETIC = 20;
-  const SWEEPS_ANTIFERROMAGNETIC = 40;
+  const SWEEPS_PARAMAGNETIC = 10;
+  const SWEEPS_ANTIFERROMAGNETIC = 20;
   const SWEEPS_FERROMAGNETIC = SWEEPS_ANTIFERROMAGNETIC;
   const SWEEPS_CRITICAL = 500;
   const SWEEPS_MEASURE = 10; // to measure the energy and magnetization
