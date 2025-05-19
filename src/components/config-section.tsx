@@ -1,6 +1,6 @@
 "use client";
 
-import { beta_hs, beta_js } from "@/config";
+import { beta_hs, beta_js, CRITICAL_BETA_J } from "@/config";
 
 export default function ConfigSection({
   betaJ,
@@ -35,7 +35,7 @@ export default function ConfigSection({
           className="w-full"
         />
         <div className="text-xs text-gray-400 mb-4">
-          (Critical point &#8776; 0.22)
+          (Critical point &#8776; ${CRITICAL_BETA_J.toFixed(2)}$)
         </div>
       </div>
       <div>

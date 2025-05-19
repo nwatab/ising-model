@@ -5,6 +5,7 @@ import {
   getIndex,
   initializeRandomLattice,
 } from "./ising";
+import { CRITICAL_BETA_J } from "@/config";
 
 type CalculateSpinEnergy = (
   lat: SpinArray,
@@ -122,10 +123,9 @@ export function simulateMetropolis(
  * Estimate the number of sweeps needed for convergence.
  */
 export function estimateSweeps(betaJ: number): number {
-  const betaJc = 0.221654;
   const nu = 0.63;
   const z = 2;
-  const tau = Math.abs(betaJ - betaJc) ** (-nu * z);
+  const tau = Math.abs(betaJ - CRITICAL_BETA_J) ** (-nu * z);
   const C = 10;
   const sweeps = C * tau;
   return Math.trunc(sweeps);
@@ -143,9 +143,10 @@ export function sweepEnergiesMetropolis(
   betaHs: readonly number[], // -betaH, ..., 0, ..., betaH
   N: number
 ) {
-  const deltaBetaH = 0; // small value to fall down to +1 for spontaneous symmetry breaking. zero for now.
-  const SWEEPS = 200;
-  const SWEEPS_NEAR_CRITICAL = 800;
+  const SWEEPS_PARAMAGNETIC = 20;
+  const SWEEPS_ANTIFERROMAGNETIC = 60;
+  const SWEEPS_FERROMAGNETIC = SWEEPS_ANTIFERROMAGNETIC;
+  const SWEEPS_CRITICAL = 800;
   const SWEEPS_MEASURE = 10; // to measure the energy and magnetization
   const SWEEPS_MEASURE_INTERVAL = 1;
   // initialize [betaJs length][betaHs length]
@@ -192,13 +193,7 @@ export function sweepEnergiesMetropolis(
     const betaJ = betaJs[i];
     const betaH = 0;
     const sweeps = estimateSweeps(betaJ);
-    const lattice = simulateMetropolis(
-      initLattice,
-      betaJ,
-      betaH + deltaBetaH,
-      N,
-      sweeps
-    );
+    const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
     const measurementResult = calculateMeasurements(
       lattice,
       betaJ,
@@ -289,11 +284,15 @@ export function sweepEnergiesMetropolis(
         result[i][j - 1].lattice
       );
       const sweeps =
-        Math.abs(betaJ - 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
+        Math.abs(betaJ - CRITICAL_BETA_J) < 0.1
+          ? SWEEPS_CRITICAL
+          : betaJ < CRITICAL_BETA_J
+            ? SWEEPS_PARAMAGNETIC
+            : SWEEPS_FERROMAGNETIC;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltaBetaH,
+        betaH,
         N,
         sweeps
       );
@@ -324,11 +323,15 @@ export function sweepEnergiesMetropolis(
         result[i][j + 1].lattice
       );
       const sweeps =
-        Math.abs(betaJ - 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
+        Math.abs(betaJ - CRITICAL_BETA_J) < 0.1
+          ? SWEEPS_CRITICAL
+          : betaJ < CRITICAL_BETA_J
+            ? SWEEPS_PARAMAGNETIC
+            : SWEEPS_FERROMAGNETIC;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltaBetaH,
+        betaH,
         N,
         sweeps
       );
@@ -358,12 +361,18 @@ export function sweepEnergiesMetropolis(
         result[i + 1][j].lattice,
         result[i][j - 1].lattice
       );
+      const sweeps =
+        Math.abs(betaJ + CRITICAL_BETA_J) < 0.1
+          ? SWEEPS_CRITICAL
+          : betaJ < CRITICAL_BETA_J
+            ? SWEEPS_ANTIFERROMAGNETIC
+            : SWEEPS_PARAMAGNETIC;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltaBetaH,
+        betaH,
         N,
-        SWEEPS
+        sweeps
       );
       const measurementResult = calculateMeasurements(
         lattice,
@@ -390,12 +399,18 @@ export function sweepEnergiesMetropolis(
         result[i + 1][j].lattice,
         result[i][j + 1].lattice
       );
+      const sweeps =
+        Math.abs(betaJ + CRITICAL_BETA_J) < 0.1
+          ? SWEEPS_CRITICAL
+          : betaJ < -CRITICAL_BETA_J
+            ? SWEEPS_ANTIFERROMAGNETIC
+            : SWEEPS_PARAMAGNETIC;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltaBetaH,
+        betaH,
         N,
-        SWEEPS
+        sweeps
       );
       const measurementResult = calculateMeasurements(
         lattice,
@@ -440,6 +455,7 @@ function calculateMeasurements(
     energies: number[];
     magnetizations: number[];
     lattices: SpinArray[];
+    lattice: SpinArray;
   }>({
     length: SWEEPS_MEASURE - 1,
   }).reduce(

@@ -1,3 +1,4 @@
+import { CRITICAL_BETA_J } from "@/config";
 import { GetIndexFn, SpinArray } from "@/types";
 
 /**
@@ -159,7 +160,7 @@ export function determineWolffSteps(
   betaH: number,
   N: number
 ): number {
-  const criticalBetaJ = 0.221; // Critical point for 3D Ising
+  const criticalBetaJ = CRITICAL_BETA_J;
   const distanceFromCritical = Math.abs(Math.abs(betaJ) - criticalBetaJ);
 
   // Base steps scaled with system size (logarithmically)
