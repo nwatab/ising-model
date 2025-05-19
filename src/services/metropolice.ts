@@ -208,6 +208,7 @@ export function sweepEnergiesMetropolis(
   for (let i = betaJZeroIndex + 1; i < betaJs.length; i++) {
     const betaJ = betaJs[i];
     const betaH = 0;
+    console.time(`betaJ: ${betaJs}, betaH: ${betaH}`);
     const sweeps = calcSweepsForMagnetic(betaJ);
     const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
     const measurementResult = calculateMeasurements(
@@ -218,6 +219,7 @@ export function sweepEnergiesMetropolis(
       SWEEPS_MEASURE,
       SWEEPS_MEASURE_INTERVAL
     );
+    console.timeEnd(`betaJ: ${betaJs}, betaH: ${betaH}`);
     result[i][betaHZeroIndex] = {
       lattice,
       betaJ,
@@ -230,6 +232,7 @@ export function sweepEnergiesMetropolis(
   for (let i = betaJZeroIndex - 1; i >= 0; i--) {
     const betaJ = betaJs[i];
     const betaH = 0;
+    console.time(`betaJ: ${betaJs}, betaH: ${betaH}`);
     const sweeps = calcSweepsForMagnetic(betaJ);
     const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
 
@@ -241,6 +244,7 @@ export function sweepEnergiesMetropolis(
       SWEEPS_MEASURE,
       SWEEPS_MEASURE_INTERVAL
     );
+    console.timeEnd(`betaJ: ${betaJs}, betaH: ${betaH}`);
     result[i][betaHZeroIndex] = {
       lattice,
       betaJ,
@@ -252,6 +256,7 @@ export function sweepEnergiesMetropolis(
   for (let j = betaHZeroIndex + 1; j < betaHs.length; j++) {
     const betaJ = 0;
     const betaH = betaHs[j];
+    console.time(`betaJ: ${betaJs}, betaH: ${betaH}`);
     const sweeps = calcSweepsForMagnetic(betaJ);
     const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
     const measurementResult = calculateMeasurements(
@@ -262,6 +267,7 @@ export function sweepEnergiesMetropolis(
       SWEEPS_MEASURE,
       SWEEPS_MEASURE_INTERVAL
     );
+    console.timeEnd(`betaJ: ${betaJs}, betaH: ${betaH}`);
     result[betaJZeroIndex][j] = {
       lattice,
       betaJ,
@@ -273,6 +279,7 @@ export function sweepEnergiesMetropolis(
   for (let j = betaHZeroIndex - 1; j >= 0; j--) {
     const betaJ = 0;
     const betaH = betaHs[j];
+    console.time(`betaJ: ${betaJs}, betaH: ${betaH}`);
     const sweeps = calcSweepsForMagnetic(betaJ);
     const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
     const measurementResult = calculateMeasurements(
@@ -283,6 +290,7 @@ export function sweepEnergiesMetropolis(
       SWEEPS_MEASURE,
       SWEEPS_MEASURE_INTERVAL
     );
+    console.timeEnd(`betaJ: ${betaJs}, betaH: ${betaH}`);
     result[betaJZeroIndex][j] = {
       lattice,
       betaJ,
@@ -295,6 +303,7 @@ export function sweepEnergiesMetropolis(
     for (let j = betaHZeroIndex + 1; j < betaHs.length; j++) {
       const betaJ = betaJs[i];
       const betaH = betaHs[j];
+      console.time(`betaJ: ${betaJs}, betaH: ${betaH}`);
       const averageLattice = averageLatices(
         result[i - 1][j].lattice,
         result[i][j - 1].lattice
@@ -315,6 +324,7 @@ export function sweepEnergiesMetropolis(
         SWEEPS_MEASURE,
         SWEEPS_MEASURE_INTERVAL
       );
+      console.timeEnd(`betaJ: ${betaJs}, betaH: ${betaH}`);
       result[i][j] = {
         lattice,
         betaJ,
@@ -329,6 +339,7 @@ export function sweepEnergiesMetropolis(
     for (let j = betaHZeroIndex - 1; j >= 0; j--) {
       const betaJ = betaJs[i];
       const betaH = betaHs[j];
+      console.time(`betaJ: ${betaJs}, betaH: ${betaH}`);
       const averageLattice = averageLatices(
         result[i - 1][j].lattice,
         result[i][j + 1].lattice
@@ -349,6 +360,7 @@ export function sweepEnergiesMetropolis(
         SWEEPS_MEASURE,
         SWEEPS_MEASURE_INTERVAL
       );
+      console.timeEnd(`betaJ: ${betaJs}, betaH: ${betaH}`);
       result[i][j] = {
         lattice,
         betaJ,
@@ -363,6 +375,7 @@ export function sweepEnergiesMetropolis(
     for (let j = betaHZeroIndex + 1; j < betaHs.length; j++) {
       const betaJ = betaJs[i];
       const betaH = betaHs[j];
+      console.time(`betaJ: ${betaJs}, betaH: ${betaH}`);
       const averageLattice = averageLatices(
         result[i + 1][j].lattice,
         result[i][j - 1].lattice
@@ -383,6 +396,7 @@ export function sweepEnergiesMetropolis(
         SWEEPS_MEASURE,
         SWEEPS_MEASURE_INTERVAL
       );
+      console.timeEnd(`betaJ: ${betaJs}, betaH: ${betaH}`);
       result[i][j] = {
         lattice,
         betaJ,
@@ -396,6 +410,7 @@ export function sweepEnergiesMetropolis(
     for (let j = betaHZeroIndex - 1; j >= 0; j--) {
       const betaJ = betaJs[i];
       const betaH = betaHs[j];
+      console.time(`betaJ: ${betaJs}, betaH: ${betaH}`);
       const averageLattice = averageLatices(
         result[i + 1][j].lattice,
         result[i][j + 1].lattice
@@ -416,6 +431,7 @@ export function sweepEnergiesMetropolis(
         SWEEPS_MEASURE,
         SWEEPS_MEASURE_INTERVAL
       );
+      console.timeEnd(`betaJ: ${betaJs}, betaH: ${betaH}`);
       result[i][j] = {
         lattice,
         betaJ,
