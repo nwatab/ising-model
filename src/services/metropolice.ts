@@ -148,7 +148,6 @@ export function sweepEnergiesMetropolis(
   const SWEEPS_NEAR_CRITICAL = 800;
   const SWEEPS_MEASURE = 10; // to measure the energy and magnetization
   const SWEEPS_MEASURE_INTERVAL = 1;
-  const spontaneousSymmetryBreakingSign = 1;
   // initialize [betaJs length][betaHs length]
   const result: {
     lattice: SpinArray;
@@ -193,20 +192,13 @@ export function sweepEnergiesMetropolis(
     const betaJ = betaJs[i];
     const betaH = 0;
     const sweeps = estimateSweeps(betaJ);
-    const simLattice = simulateMetropolis(
+    const lattice = simulateMetropolis(
       initLattice,
       betaJ,
       betaH + deltaBetaH,
       N,
       sweeps
     );
-    const lattice =
-      betaJ > 0.22
-        ? flipMagnetizationDirection(
-            simLattice,
-            spontaneousSymmetryBreakingSign
-          )
-        : simLattice;
     const measurementResult = calculateMeasurements(
       lattice,
       betaJ,
@@ -298,20 +290,13 @@ export function sweepEnergiesMetropolis(
       );
       const sweeps =
         Math.abs(betaJ - 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
-      const simLattice = simulateMetropolis(
+      const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
         betaH + deltaBetaH,
         N,
         sweeps
       );
-      const lattice =
-        betaJ > 0.22
-          ? flipMagnetizationDirection(
-              simLattice,
-              spontaneousSymmetryBreakingSign
-            )
-          : simLattice;
       const measurementResult = calculateMeasurements(
         lattice,
         betaJ,
@@ -340,20 +325,13 @@ export function sweepEnergiesMetropolis(
       );
       const sweeps =
         Math.abs(betaJ - 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
-      const simLattice = simulateMetropolis(
+      const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
         betaH + deltaBetaH,
         N,
         sweeps
       );
-      const lattice =
-        betaJ > 0.22
-          ? flipMagnetizationDirection(
-              simLattice,
-              spontaneousSymmetryBreakingSign
-            )
-          : simLattice;
       const measurementResult = calculateMeasurements(
         lattice,
         betaJ,
@@ -503,7 +481,7 @@ function calculateMeasurements(
   };
 }
 
-function flipMagnetizationDirection(lattice: SpinArray, spin: 1 | -1) {
+export function flipMagnetizationDirection(lattice: SpinArray, spin: 1 | -1) {
   const netMagnetization = lattice.reduce((a, b) => a + b, 0);
   const mSign = Math.sign(netMagnetization);
 
