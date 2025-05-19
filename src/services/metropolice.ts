@@ -380,14 +380,12 @@ export function sweepEnergiesMetropolis(
         result[i + 1][j].lattice,
         result[i][j - 1].lattice
       );
-      const sweeps =
-        Math.abs(betaJ + 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
         betaH + deltaBetaH,
         N,
-        sweeps
+        SWEEPS
       );
       const measurementResult = calculateMeasurements(
         lattice,
@@ -414,14 +412,12 @@ export function sweepEnergiesMetropolis(
         result[i + 1][j].lattice,
         result[i][j + 1].lattice
       );
-      const sweeps =
-        Math.abs(betaJ + 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
         betaH + deltaBetaH,
         N,
-        sweeps
+        SWEEPS
       );
       const measurementResult = calculateMeasurements(
         lattice,
