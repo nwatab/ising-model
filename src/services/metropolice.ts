@@ -143,8 +143,8 @@ export function sweepEnergiesMetropolis(
   betaHs: readonly number[], // -betaH, ..., 0, ..., betaH
   N: number
 ) {
-  const deltaBetaH = 0; // small value to fall down to +1 for spontaneous symmetry breaking. zero for now.
-  const SWEEPS = 200;
+  const SWEEPS_PARAMAGNETIC = 100;
+  const SWEEPS_ANTIFERROMAGNETIC = 20;
   const SWEEPS_NEAR_CRITICAL = 800;
   const SWEEPS_MEASURE = 10; // to measure the energy and magnetization
   const SWEEPS_MEASURE_INTERVAL = 1;
@@ -192,13 +192,7 @@ export function sweepEnergiesMetropolis(
     const betaJ = betaJs[i];
     const betaH = 0;
     const sweeps = estimateSweeps(betaJ);
-    const lattice = simulateMetropolis(
-      initLattice,
-      betaJ,
-      betaH + deltaBetaH,
-      N,
-      sweeps
-    );
+    const lattice = simulateMetropolis(initLattice, betaJ, betaH, N, sweeps);
     const measurementResult = calculateMeasurements(
       lattice,
       betaJ,
@@ -289,11 +283,13 @@ export function sweepEnergiesMetropolis(
         result[i][j - 1].lattice
       );
       const sweeps =
-        Math.abs(betaJ - 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
+        Math.abs(betaJ - 0.22) < 0.1
+          ? SWEEPS_NEAR_CRITICAL
+          : SWEEPS_PARAMAGNETIC;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltaBetaH,
+        betaH,
         N,
         sweeps
       );
@@ -324,11 +320,13 @@ export function sweepEnergiesMetropolis(
         result[i][j + 1].lattice
       );
       const sweeps =
-        Math.abs(betaJ - 0.22) < 0.2 ? SWEEPS_NEAR_CRITICAL : SWEEPS;
+        Math.abs(betaJ - 0.22) < 0.1
+          ? SWEEPS_NEAR_CRITICAL
+          : SWEEPS_PARAMAGNETIC;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltaBetaH,
+        betaH,
         N,
         sweeps
       );
@@ -358,12 +356,14 @@ export function sweepEnergiesMetropolis(
         result[i + 1][j].lattice,
         result[i][j - 1].lattice
       );
+      const sweeps =
+        betaJ < -0.22 ? SWEEPS_ANTIFERROMAGNETIC : SWEEPS_PARAMAGNETIC;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltaBetaH,
+        betaH,
         N,
-        SWEEPS
+        sweeps
       );
       const measurementResult = calculateMeasurements(
         lattice,
@@ -390,12 +390,14 @@ export function sweepEnergiesMetropolis(
         result[i + 1][j].lattice,
         result[i][j + 1].lattice
       );
+      const sweeps =
+        betaJ < -0.22 ? SWEEPS_ANTIFERROMAGNETIC : SWEEPS_PARAMAGNETIC;
       const lattice = simulateMetropolis(
         averageLattice,
         betaJ,
-        betaH + deltaBetaH,
+        betaH,
         N,
-        SWEEPS
+        sweeps
       );
       const measurementResult = calculateMeasurements(
         lattice,
