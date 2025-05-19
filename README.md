@@ -15,7 +15,7 @@ This project provides an interactive web-based simulation of the 3D Ising model,
 The Ising model represents a lattice of spins that can be in one of two states: up (+1) or down (-1). Each spin interacts with its nearest neighbors. The Hamiltonian (energy) of the system is given by:
 
 ```math
-H = -J \sum_{nearest\; i, j} s_{i} s_{j} - h \sum_{i} s_{i}
+H = -J \sum_{\langle i, j\rangle} s_{i} s_{j} - h \sum_{i} s_{i}
 ```
 
 Where:
