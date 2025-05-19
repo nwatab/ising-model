@@ -26,8 +26,8 @@ Where:
 
 The simulation uses the Metropolis algorithm to sample configurations according to the Boltzmann distribution. The dimensionless parameters used are:
 
-- $$\beta J$$ $$(J/k_{\mathrm B}T)$$: Coupling strength divided by temperature
-- $$\beta h$$ $$(h/k_{\mathrm B}T)$$: Field strength divided by temperature
+- $$\beta J$$ $$(=J/k_{\mathrm B}T)$$: Coupling strength divided by temperature
+- $$\beta h$$ $$(=h/k_{\mathrm B}T)$$: Field strength divided by temperature
 
 ## Setup
 
