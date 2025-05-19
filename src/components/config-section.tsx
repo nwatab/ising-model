@@ -18,11 +18,10 @@ export default function ConfigSection({
       <h2 className="text-lg font-bold mb-4">Parameters</h2>
       <div className="mb-8">
         <label className="block text-sm font-medium mb-1">
-          <span className="italic">J</span>/
-          <span className="italic">
-            k<sub>B</sub>T
-          </span>
-          :<span className="ml-1">{betaJ.toFixed(1)}</span>
+          <span className="italic">J</span>/<span className="italic"></span>k
+          <sub>B</sub>
+          <span className="italic">T</span>:
+          <span className="ml-1">{betaJ.toFixed(1)}</span>
         </label>
         <input
           type="range"
@@ -35,16 +34,15 @@ export default function ConfigSection({
           className="w-full"
         />
         <div className="text-xs text-gray-400 mb-4">
-          (Critical point &#8776; ${CRITICAL_BETA_J.toFixed(2)}$)
+          (Critical point &#8776; {CRITICAL_BETA_J.toFixed(2)})
         </div>
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">
-          <span className="italic">h</span>/
-          <span className="italic">
-            k<sub>B</sub>T
-          </span>
-          :<span className="ml-1">{betaH.toFixed(1)}</span>
+          <span className="italic">h</span>/<span className="italic">k</span>
+          <sub>B</sub>
+          <span className="italic">T</span>:
+          <span className="ml-1">{betaH.toFixed(1)}</span>
         </label>
         <input
           type="range"
