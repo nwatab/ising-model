@@ -24,7 +24,7 @@ export default function StatisticalInfo({
           {energy.toFixed(3)}
           <span className="text-xs">
             <span className="mx-1">&plusmn;</span>
-            {stdevEnergy.toFixed(2)}
+            {stdevEnergy.toFixed(3)}
           </span>
         </span>
       </div>
@@ -36,7 +36,7 @@ export default function StatisticalInfo({
           {magnetization.toFixed(3)}
           <span className="text-xs">
             <span className="mx-1">&plusmn;</span>
-            {stdevMagnetization.toFixed(2)}
+            {stdevMagnetization.toFixed(3)}
           </span>
         </span>
       </div>
