@@ -5,8 +5,8 @@ This project provides an interactive web-based simulation of the 3D Ising model,
 ## Features
 
 - Real-time 3D Ising model simulation with visualization
-- Adjustable temperature ($J/k_{B}T$) parameter, including near the critical point ($\approx 0.22$)
-- Adjustable external magnetic field ($$h/k_{B}T$$)
+- Adjustable temperature ($J/k_{\mathrm B}T$) parameter, including near the critical point ($\approx 0.22$)
+- Adjustable external magnetic field ($$h/k_{\mathrm B}T$$)
 - Interactive visualization of a 2D slice through the 3D lattice
 - Real-time energy and magnetization measurements
 
@@ -26,8 +26,8 @@ Where:
 
 The simulation uses the Metropolis algorithm to sample configurations according to the Boltzmann distribution. The dimensionless parameters used are:
 
-- $$\beta J$$ $$(J/k_{B}T)$$: Coupling strength divided by temperature
-- $$\beta h$$ $$(h/k_{B}T)$$: Field strength divided by temperature
+- $$\beta J$$ $$(J/k_{\mathrm B}T)$$: Coupling strength divided by temperature
+- $$\beta h$$ $$(h/k_{\mathrm B}T)$$: Field strength divided by temperature
 
 ## Setup
 

@@ -15,9 +15,9 @@ export default function StatisticalInfo({
       <div className="flex">
         <div className="w-36">
           Energy (<span className="italic">E</span>/
-          <span className="italic">
-            k<sub>B</sub>T
-          </span>
+          <span className="italic">k</span>
+          <sub>B</sub>
+          <span className="italic">T</span>
           ):
         </div>
         <span className="ml-1">
