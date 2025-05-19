@@ -126,7 +126,7 @@ export function estimateSweeps(betaJ: number): number {
   const nu = 0.63;
   const z = 2;
   const tau = Math.abs(betaJ - CRITICAL_BETA_J) ** (-nu * z);
-  const C = 10;
+  const C = 5;
   const sweeps = C * tau;
   return Math.trunc(sweeps);
 }
@@ -144,9 +144,9 @@ export function sweepEnergiesMetropolis(
   N: number
 ) {
   const SWEEPS_PARAMAGNETIC = 20;
-  const SWEEPS_ANTIFERROMAGNETIC = 60;
+  const SWEEPS_ANTIFERROMAGNETIC = 40;
   const SWEEPS_FERROMAGNETIC = SWEEPS_ANTIFERROMAGNETIC;
-  const SWEEPS_CRITICAL = 800;
+  const SWEEPS_CRITICAL = 500;
   const SWEEPS_MEASURE = 10; // to measure the energy and magnetization
   const SWEEPS_MEASURE_INTERVAL = 1;
   // initialize [betaJs length][betaHs length]
