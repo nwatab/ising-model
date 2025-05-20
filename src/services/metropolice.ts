@@ -66,7 +66,7 @@ export function sweepEnergiesMetropolis(
   const SWEEPS_PARAMAGNETIC = 30;
   const SWEEPS_ANTIFERROMAGNETIC = 10;
   const SWEEPS_FERROMAGNETIC = 20;
-  const SWEEPS_CRITICAL = 10;
+  const SWEEPS_CRITICAL = 400;
   const SWEEPS_MEASURE = 8; // to measure the energy and magnetization
   const SWEEPS_MEASURE_INTERVAL = 1;
 
