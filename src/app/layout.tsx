@@ -34,6 +34,8 @@ export default function RootLayout({
             </Script>
           </>
         )}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/favicon.ico" sizes="16x16" />
       </head>
       <body className="font-roboto antialiased">{children}</body>
     </html>
