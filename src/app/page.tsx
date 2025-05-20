@@ -1,6 +1,5 @@
 import { IsingPage } from "@/components/ising-page";
 import { beta_hs, beta_js } from "@/config";
-import { getIndex } from "@/services/ising";
 
 import { sweepEnergiesMetropolis } from "@/services/metropolice";
 import { generateSVGDataURL } from "@/services/svg-lattice";
@@ -11,7 +10,7 @@ export default function Home() {
   const simulationResults = sweepEnergiesMetropolis(beta_js, beta_hs, N);
   const resultSVGUrls = simulationResults.map((row) =>
     row.map(({ lattice, ...result }) => {
-      const svgDataUrl = generateSVGDataURL(lattice, N, getIndex);
+      const svgDataUrl = generateSVGDataURL(lattice);
       return {
         svgDataUrl,
         ...result,

@@ -15,7 +15,7 @@ function ShowScientific({ value, error }: { value: number; error: number }) {
   }
   return (
     <span className="ml-1">
-      ({co.toFixed(3)}
+      ({co.toFixed(2)}
       <span className="text-xs">
         <span className="mx-1">&plusmn;</span>
         {errCo.toFixed(2)}

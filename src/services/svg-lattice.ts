@@ -1,15 +1,12 @@
-import { GetIndexFn, SpinArray } from "@/types";
+import { SpinLattice } from "./spin-lattice";
 
-export function generateSVGDataURL(
-  lattice: SpinArray,
-  N: number,
-  getIndex: GetIndexFn
-) {
+export function generateSVGDataURL(lattice: SpinLattice): string {
+  const N = lattice.latticeSize;
   const z = Math.floor(N / 2);
   const rects = [];
   for (let y = 0; y < N; y++) {
     for (let x = 0; x < N; x++) {
-      const spin = lattice[getIndex(x, y, z, N)];
+      const spin = lattice.getSpin({ x, y, z });
       const fill =
         spin > 0
           ? "oklch(47% 0.157 37.304)" /* orange-800 */

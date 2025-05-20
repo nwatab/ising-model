@@ -1,34 +1,32 @@
 import { CRITICAL_BETA_J } from "@/config";
-import { GetIndexFn, SpinArray } from "@/types";
+import { SpinLattice } from "./spin-lattice";
 
 /**
  * Perform a single Wolff cluster step on the lattice.
  * Returns the number of spins flipped (cluster size).
  */
 export function wolffStep(
-  lat: SpinArray,
+  lat: SpinLattice,
   betaJ: number,
-  betaH: number,
-  N: number,
-  getIndex: GetIndexFn
+  betaH: number
 ): number {
+  const N = lat.latticeSize;
   // Skip cluster update if field is too strong relative to coupling
   if (Math.abs(betaH) > 10 * Math.abs(betaJ)) {
     // With strong field, just flip a single spin with Metropolis
     const x = Math.floor(Math.random() * N);
     const y = Math.floor(Math.random() * N);
     const z = Math.floor(Math.random() * N);
-    const idx = getIndex(x, y, z, N);
 
     // Calculate energy change for this single spin flip
-    const spin = lat[idx];
+    const spin = lat.getSpin({ x, y, z });
     const neighbors = [
-      lat[getIndex(x + 1, y, z, N)],
-      lat[getIndex(x - 1, y, z, N)],
-      lat[getIndex(x, y + 1, z, N)],
-      lat[getIndex(x, y - 1, z, N)],
-      lat[getIndex(x, y, z + 1, N)],
-      lat[getIndex(x, y, z - 1, N)],
+      lat.getSpin({ x: x + 1, y, z }),
+      lat.getSpin({ x: x - 1, y, z }),
+      lat.getSpin({ x, y: y + 1, z }),
+      lat.getSpin({ x, y: y - 1, z }),
+      lat.getSpin({ x, y, z: z + 1 }),
+      lat.getSpin({ x, y, z: z - 1 }),
     ];
 
     let deltaE = 0;
@@ -38,7 +36,7 @@ export function wolffStep(
     deltaE += 2 * betaH * spin;
 
     if (deltaE <= 0 || Math.random() < Math.exp(-deltaE)) {
-      lat[idx] *= -1; // Flip the spin
+      lat.flipSpin({ x, y, z }); // Flip the spin
       return 1;
     }
     return 0;
@@ -50,7 +48,7 @@ export function wolffStep(
   const seedX = Math.floor(Math.random() * N);
   const seedY = Math.floor(Math.random() * N);
   const seedZ = Math.floor(Math.random() * N);
-  const seedIdx = getIndex(seedX, seedY, seedZ, N);
+  const seedIdx = lat.bitIndex({ x: seedX, y: seedY, z: seedZ });
   const seedSpin = lat[seedIdx];
   const isAntiferro = betaJ < 0;
   const absBetaJ = Math.abs(betaJ);
@@ -89,7 +87,7 @@ export function wolffStep(
       const nx = (x + dx + N) % N;
       const ny = (y + dy + N) % N;
       const nz = (z + dz + N) % N;
-      const nIdx = getIndex(nx, ny, nz, N);
+      const nIdx = lat.bitIndex({ x: nx, y: ny, z: nz });
       if (visited[nIdx]) continue;
 
       // bond‐test:
@@ -132,16 +130,15 @@ export function wolffStep(
  * Run many Wolff steps to equilibrate.
  */
 export function simulateWolff(
-  lattice: SpinArray,
+  lattice: SpinLattice,
   betaJ: number,
   betaH: number,
   N: number,
-  steps: number,
-  getIndex: GetIndexFn
-): SpinArray {
-  const lat = new Int8Array(lattice) as SpinArray;
+  steps: number
+): SpinLattice {
+  const lat = new SpinLattice(lattice);
   for (let i = 0; i < steps; i++) {
-    wolffStep(lat, betaJ, betaH, N, getIndex);
+    wolffStep(lat, betaJ, betaH);
   }
   return lat;
 }
