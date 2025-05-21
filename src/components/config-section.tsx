@@ -5,13 +5,17 @@ import { beta_hs, beta_js, CRITICAL_BETA_J } from "@/config";
 export default function ConfigSection({
   betaJ,
   betaH,
+  z,
   setBetaJ,
   setBetaH,
+  setZ,
 }: {
   betaJ: number;
   betaH: number;
+  z: number;
   setBetaJ: (value: number) => void;
   setBetaH: (value: number) => void;
+  setZ: (value: number) => void;
 }) {
   return (
     <form className="text-sm mb-8">
@@ -37,7 +41,7 @@ export default function ConfigSection({
           (Critical point &#8776; {CRITICAL_BETA_J.toFixed(2)})
         </div>
       </div>
-      <div>
+      <div className="mb-8">
         <label className="block text-sm font-medium mb-1">
           <span className="italic">h</span>/<span className="italic">k</span>
           <sub>B</sub>
@@ -53,6 +57,23 @@ export default function ConfigSection({
           value={betaH}
           onChange={(e) => setBetaH(parseFloat(e.target.value) || 0)}
           className={`w-${beta_hs.length}/${beta_js.length} mx-auto block`}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          <span className="italic">z</span>:
+          <span className="ml-1">{z.toFixed(0)}</span>
+        </label>
+        <input
+          type="range"
+          name="z"
+          min="0"
+          max={Number(process.env.NEXT_PUBLIC_N) - 1}
+          step="1"
+          value={z}
+          onChange={(e) => setZ(parseInt(e.target.value))}
+          className={`w-full`}
         />
       </div>
     </form>

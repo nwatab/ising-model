@@ -44,8 +44,10 @@ export function IsingPage({
         <ConfigSection
           betaJ={betaJ}
           betaH={betaH}
+          z={z}
           setBetaJ={(v) => setBetaJ(v)}
           setBetaH={(v) => setBetaH(v)}
+          setZ={(v) => setZ(v)}
         />
         <StatisticalInfo
           energy={result.energy}

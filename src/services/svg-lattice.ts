@@ -3,7 +3,7 @@ import { SpinLattice } from "./spin-lattice";
 export function generateSVGDataURL(lattice: SpinLattice, z: number): string {
   const N = lattice.latticeSize;
   if (z < 0 || z >= lattice.latticeSize) {
-    throw new Error(`z must be in [0, ${N})`);
+    throw new Error(`z must be in [0, ${N}). Got ${z}`);
   }
 
   const rects = [];
