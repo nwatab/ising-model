@@ -5,7 +5,7 @@ import { parseArgs } from "node:util";
 import zlib from "node:zlib";
 
 import { beta_hs, beta_js } from "../config";
-import { sweepEnergiesMetropolis } from "../services/metropolice";
+import { sweepEnergiesMetropolis } from "../services/metropolis";
 import { rleEncode } from "../services/rle";
 import type { SimulationResultOnDisk } from "@/types";
 
