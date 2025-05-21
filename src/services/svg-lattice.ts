@@ -1,8 +1,11 @@
 import { SpinLattice } from "./spin-lattice";
 
-export function generateSVGDataURL(lattice: SpinLattice): string {
+export function generateSVGDataURL(lattice: SpinLattice, z: number): string {
   const N = lattice.latticeSize;
-  const z = Math.floor(N / 2);
+  if (z < 0 || z >= lattice.latticeSize) {
+    throw new Error(`z must be in [0, ${N})`);
+  }
+
   const rects = [];
   for (let y = 0; y < N; y++) {
     for (let x = 0; x < N; x++) {

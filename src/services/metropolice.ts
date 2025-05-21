@@ -63,11 +63,11 @@ export function sweepEnergiesMetropolis(
   betaHs: readonly number[], // -betaH, ..., 0, ..., betaH
   N: number
 ) {
-  const SWEEPS_PARAMAGNETIC = 30;
-  const SWEEPS_ANTIFERROMAGNETIC = 10;
-  const SWEEPS_FERROMAGNETIC = 20;
-  const SWEEPS_CRITICAL = 400;
-  const SWEEPS_MEASURE = 8; // to measure the energy and magnetization
+  const SWEEPS_PARAMAGNETIC = 100;
+  const SWEEPS_ANTIFERROMAGNETIC = 100;
+  const SWEEPS_FERROMAGNETIC = 100;
+  const SWEEPS_CRITICAL = 800;
+  const SWEEPS_MEASURE = 12; // to measure the energy and magnetization
   const SWEEPS_MEASURE_INTERVAL = 1;
 
   function calcSweepsForMagnetic(betaJ: number) {
@@ -94,6 +94,7 @@ export function sweepEnergiesMetropolis(
     magnetization: number;
     stdevEnergy: number;
     stdevMagnetization: number;
+    sweeps: number;
   }[][] = Array.from({ length: betaJs.length }, () =>
     Array.from({ length: betaHs.length }, () => ({
       lattice: new SpinLattice(N),
@@ -103,6 +104,7 @@ export function sweepEnergiesMetropolis(
       magnetization: 0,
       stdevEnergy: 0,
       stdevMagnetization: 0,
+      sweeps: 0,
     }))
   );
   // initialize lattice where J =0 and h = 0
@@ -121,6 +123,7 @@ export function sweepEnergiesMetropolis(
     lattice: initLattice,
     betaJ: 0,
     betaH: 0,
+    sweeps: 0,
     ...measurementResult,
   };
 
@@ -142,6 +145,7 @@ export function sweepEnergiesMetropolis(
       lattice,
       betaJ,
       betaH,
+      sweeps,
       ...measurementResult,
     };
   }
@@ -165,6 +169,7 @@ export function sweepEnergiesMetropolis(
       lattice,
       betaJ,
       betaH,
+      sweeps,
       ...measurementResult,
     };
   }
@@ -186,6 +191,7 @@ export function sweepEnergiesMetropolis(
       lattice,
       betaJ,
       betaH,
+      sweeps,
       ...measurementResult,
     };
   }
@@ -207,6 +213,7 @@ export function sweepEnergiesMetropolis(
       lattice,
       betaJ,
       betaH,
+      sweeps,
       ...measurementResult,
     };
   }
@@ -239,6 +246,7 @@ export function sweepEnergiesMetropolis(
         lattice,
         betaJ,
         betaH,
+        sweeps,
         ...measurementResult,
       };
     }
@@ -246,7 +254,7 @@ export function sweepEnergiesMetropolis(
 
   // sweep for positive betaJs and negative betaHs
   for (let i = betaJZeroIndex + 1; i < betaJs.length; i++) {
-    for (let j = betaHZeroIndex - 1; j > 0; j--) {
+    for (let j = betaHZeroIndex - 1; j >= 0; j--) {
       const betaJ = betaJs[i];
       const betaH = betaHs[j];
 
@@ -274,6 +282,7 @@ export function sweepEnergiesMetropolis(
         lattice,
         betaJ,
         betaH,
+        sweeps,
         ...measurementResult,
       };
     }
@@ -309,6 +318,7 @@ export function sweepEnergiesMetropolis(
         lattice,
         betaJ,
         betaH,
+        sweeps,
         ...measurementResult,
       };
     }
@@ -342,6 +352,7 @@ export function sweepEnergiesMetropolis(
         lattice,
         betaJ,
         betaH,
+        sweeps,
         ...measurementResult,
       };
     }
