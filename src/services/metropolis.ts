@@ -127,7 +127,6 @@ export function sweepEnergiesMetropolis(
     ...measurementResult,
   };
 
-  // 以下の一塊を各軸で行う
   (() => {
     let lattice = new SpinLattice(initLattice);
     // initialize positive betaJs and h = 0
