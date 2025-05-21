@@ -13,6 +13,18 @@ export default function Home() {
     })
   );
 
+  const troublesomeResult = simulationResults
+    .flat()
+    .flat()
+    .find((v) => v.lattice_size !== simulationResults[0][0].lattice_size);
+  if (troublesomeResult) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { lattice: _lattice, ...data } = troublesomeResult;
+    throw new Error(
+      "Inconsistent lattice size: " + JSON.stringify(data, null, 2)
+    );
+  }
+
   return (
     <Suspense>
       <IsingPage simulationResults={simulationResults} />

@@ -10,11 +10,12 @@ import { rleDecode } from "@/services/rle";
 import { SpinLattice } from "@/services/spin-lattice";
 
 export function IsingPage({
-  simulationResults,
+  simulationResults: results,
 }: {
   simulationResults: SimulationResultOnDisk[][];
 }) {
-  const N = parseInt(process.env.NEXT_PUBLIC_N ?? "32");
+  const N = results[0][0].lattice_size;
+  // const N = parseInt(process.env.NEXT_PUBLIC_N ?? "32");
   const [betaJ, setBetaJ] = useState(0);
   const [betaH, setBetaH] = useState(0);
   const [z, setZ] = useState(Math.floor(N / 2));
@@ -23,7 +24,7 @@ export function IsingPage({
   if (betaJIndex === -1 || betaHIndex === -1) {
     throw new Error("Invalid betaJ or betaH: " + betaJ + ", " + betaH);
   }
-  const result = simulationResults[betaJIndex][betaHIndex];
+  const result = results[betaJIndex][betaHIndex];
   const latticeCompressed = Buffer.from(result.lattice, "base64");
   const decompressSync =
     result.compress === "deflate" ? zlib.inflateSync : rleDecode;
