@@ -17,12 +17,43 @@ export default function ConfigSection({
   setBetaH: (value: number) => void;
   setZ: (value: number) => void;
 }) {
+  console.log(betaJ);
+  console.log(Math.sign(betaJ + 1e6));
   return (
     <form className="text-sm mb-8">
       <h2 className="text-lg font-bold mb-4">Parameters</h2>
+
+      <div className="mb-4">
+        <div className="flex items-center space-x-6 mb-4">
+          <div className="flex items-center">
+            <input
+              type="radio"
+              name="couplingType"
+              checked={betaJ >= 0}
+              onChange={() => setBetaJ(Math.abs(betaJ))}
+              className="mr-2"
+            />
+            <label htmlFor="ferromagnetic" className="text-sm">
+              J &gt; 0
+            </label>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="radio"
+              name="couplingType"
+              checked={betaJ < 0}
+              onChange={() => setBetaJ(-Math.abs(betaJ))}
+              className="mr-2"
+            />
+            <label htmlFor="antiferromagnetic" className="text-sm">
+              J &lt; 0
+            </label>
+          </div>
+        </div>
+      </div>
       <div className="mb-8">
         <label className="block text-sm font-medium mb-1">
-          <span className="italic">J</span>/<span className="italic"></span>k
+          |<span className="italic">J</span>|/<span className="italic"></span>k
           <sub>B</sub>
           <span className="italic">T</span>:
           <span className="ml-1">{betaJ.toFixed(1)}</span>
@@ -30,11 +61,13 @@ export default function ConfigSection({
         <input
           type="range"
           name="betaJ"
-          min={beta_js[0]}
+          min="0"
           max={beta_js[beta_js.length - 1]}
           step="0.1"
-          value={betaJ}
-          onChange={(e) => setBetaJ(parseFloat(e.target.value) || 0)}
+          value={Math.abs(betaJ)}
+          onChange={(e) =>
+            setBetaJ(Math.sign(betaJ + 1e-6) * parseFloat(e.target.value) || 0)
+          }
           className="w-full"
         />
         <div className="text-xs text-gray-400 mb-4">
