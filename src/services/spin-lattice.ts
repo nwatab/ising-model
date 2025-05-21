@@ -11,8 +11,8 @@ function popcount(byte: number): number {
 export class SpinLattice extends BitPackedArray {
   private readonly N: number;
   constructor(latticeSize: number);
-  constructor(other: SpinLattice);
-  constructor(arg: number | SpinLattice) {
+  constructor(other: Uint8Array);
+  constructor(arg: number | Uint8Array) {
     if (typeof arg === "number") {
       // allocate fresh array
       const bits = arg ** 3;
@@ -23,7 +23,7 @@ export class SpinLattice extends BitPackedArray {
     } else {
       // copy‐constructor
       super(arg); // calls BitPackedArray(other)
-      this.N = arg.N;
+      this.N = Math.cbrt(arg.length * 8); // lattice size
     }
   }
   get latticeSize(): number {

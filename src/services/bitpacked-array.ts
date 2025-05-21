@@ -13,8 +13,8 @@ export class BitPackedArray extends Uint8Array {
    * Create a copy of an existing BitPackedArray.
    * @param other The BitPackedArray to copy
    */
-  constructor(other: BitPackedArray);
-  constructor(arg: number | BitPackedArray) {
+  constructor(other: Uint8Array);
+  constructor(arg: number | Uint8Array) {
     if (typeof arg === "number") {
       if (!Number.isInteger(arg) || arg <= 0) {
         throw new Error("Invalid size: N must be a positive integer (bytes)");
