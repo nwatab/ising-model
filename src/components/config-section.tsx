@@ -21,8 +21,6 @@ export default function ConfigSection({
   const [jSign, setJSign] = React.useState<1 | -1>(
     Math.sign(betaJ + 1e-6) as 1 | -1
   );
-  console.log(betaJ);
-  console.log(Math.sign(betaJ + 1e6));
   return (
     <form className="text-sm">
       <h2 className="text-lg font-bold mb-4">Parameters</h2>
