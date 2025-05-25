@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import zlib from "zlib";
+import Image from "next/image";
 import { temperatures, CRITICAL_TEMP, beta_hs } from "@/config";
 import { generateSVGDataURL, getTileSize } from "@/services/svg-lattice";
 
@@ -49,7 +50,21 @@ export function IsingPage({
       }}
     >
       <div className="fixed top-4 left-4 bg-gray-800 p-4 rounded-lg shadow-lg z-10 w-64 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.25)] opacity-85">
-        <h1 className="text-xl font-bold mb-4">3D Ising Model</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-bold">3D Ising Model</h1>
+          <a
+            href="https://github.com/nwatab/ising-model"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              src="/github-mark-white.svg"
+              alt="GitHub"
+              width={24}
+              height={24}
+            />
+          </a>
+        </div>
         <ConfigSection
           temperature={temp}
           setTemperature={setTemp}
