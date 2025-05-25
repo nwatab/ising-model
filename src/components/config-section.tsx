@@ -45,34 +45,30 @@ export default function ConfigSection({
       <div className="mb-4">
         <div className="flex items-center space-x-6 mb-4">
           <div className="flex items-center">
-            <input
-              type="radio"
-              name="couplingType"
-              checked={jSign > 0}
-              onChange={() => {
-                setJSign(1);
-              }}
-              className="mr-2"
-            />
-            <label htmlFor="ferromagnetic" className="text-sm" title="J > 0">
+            <label className="text-sm" title="J > 0">
+              <input
+                type="radio"
+                name="magneticType"
+                checked={jSign > 0}
+                onChange={() => {
+                  setJSign(1);
+                }}
+                className="mr-2"
+              />
               Para/Ferro
             </label>
           </div>
           <div className="flex items-center">
-            <input
-              type="radio"
-              name="couplingType"
-              checked={jSign < 0}
-              onChange={() => {
-                setJSign(-1);
-              }}
-              className="mr-2"
-            />
-            <label
-              htmlFor="antiferromagnetic"
-              className="text-sm"
-              title="J < 0"
-            >
+            <label className="text-sm" title="J < 0">
+              <input
+                type="radio"
+                name="magneticType"
+                checked={jSign < 0}
+                onChange={() => {
+                  setJSign(-1);
+                }}
+                className="mr-2"
+              />
               Para/Antiferro
             </label>
           </div>
