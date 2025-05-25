@@ -3,3 +3,8 @@ export const temperatures = [
 ] as const; // for classic Tsing model, βJ << 1. So T >> 0.22 Tc.
 export const beta_hs = [0, 0.2, 0.4, 0.6] as const;
 export const CRITICAL_TEMP = 1000;
+
+/**
+ * deprecated. for wolff simulation
+ */
+export const CRITICAL_BETA_J = 0.221654;
