@@ -37,8 +37,8 @@ export default function StatisticalInfo({
   stdevMagnetization: number;
 }) {
   return (
-    <div className="text-sm mt-8 space-y-4">
-      <h2 className="text-lg font-bold mb-4">Statistics</h2>
+    <div className="text-sm mt-4 space-y-4">
+      <h2 className="text-lg font-bold mb-2">Statistics</h2>
       <div className="flex justify-between">
         <div>
           <span className="italic">E</span>/<span className="italic">k</span>
