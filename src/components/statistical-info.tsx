@@ -6,7 +6,7 @@ function ShowScientific({ value, error }: { value: number; error: number }) {
     return (
       <span className="ml-1">
         {co.toFixed(3)}
-        <span className="text-xs">
+        <span className="text-xs align-middle">
           <span className="mx-1">&plusmn;</span>
           {errCo.toFixed(2)}
         </span>
@@ -16,7 +16,7 @@ function ShowScientific({ value, error }: { value: number; error: number }) {
   return (
     <span className="ml-1">
       ({co.toFixed(1)}
-      <span className="text-xs">
+      <span className="text-xs align-middle">
         <span className="mx-1">&plusmn;</span>
         {errCo.toFixed(2)}
       </span>
@@ -26,14 +26,14 @@ function ShowScientific({ value, error }: { value: number; error: number }) {
 }
 
 export default function StatisticalInfo({
-  energy,
+  energyPerSite,
+  stdevEnergyPerSite,
   magnetization,
-  stdevEnergy,
   stdevMagnetization,
 }: {
-  energy: number;
+  energyPerSite: number;
+  stdevEnergyPerSite: number;
   magnetization: number;
-  stdevEnergy: number;
   stdevMagnetization: number;
 }) {
   return (
@@ -41,13 +41,12 @@ export default function StatisticalInfo({
       <h2 className="text-lg font-bold mb-4">Statistics</h2>
       <div className="flex justify-between">
         <div>
-          Energy (<span className="italic">E</span>/
-          <span className="italic">k</span>
+          <span className="italic">E</span>/<span className="italic">k</span>
           <sub>B</sub>
           <span className="italic">T</span>
-          ):
+          <span className="ml-1">per site</span>:
         </div>
-        <ShowScientific value={energy} error={stdevEnergy} />
+        <ShowScientific value={energyPerSite} error={stdevEnergyPerSite} />
       </div>
       <div
         className="flex justify-between"

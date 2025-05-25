@@ -4,10 +4,11 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import zlib from "node:zlib";
 
-import { beta_hs, beta_js } from "../config";
+import { temperatures, beta_hs, CRITICAL_TEMP } from "../config";
 import { sweepEnergiesMetropolis } from "../services/metropolis";
 import { rleEncode } from "../services/rle";
 import type { SimulationResultOnDisk } from "@/types";
+import { getBetaJ } from "@/services/betaj";
 
 async function main() {
   const { values: raw } = parseArgs({
@@ -21,23 +22,30 @@ async function main() {
   });
 
   const N = Number(raw.N);
+  for (let jSign = -1; jSign <= 1; jSign += 2) {
+    const beta_js = temperatures
+      .map((t) => jSign * getBetaJ(t, CRITICAL_TEMP))
+      .sort((a, b) => Math.abs(a) - Math.abs(b));
+    const simulationResults = sweepEnergiesMetropolis(
+      beta_js,
+      beta_hs,
+      N
+    ).flat();
 
-  const simulationResults = sweepEnergiesMetropolis(beta_js, beta_hs, N);
+    const outDir = path.resolve("data");
+    fs.mkdirSync(outDir, { recursive: true });
 
-  const outDir = path.resolve("data");
-  fs.mkdirSync(outDir, { recursive: true });
-
-  for (const row of simulationResults) {
-    for (const {
-      lattice,
-      betaJ,
-      betaH,
-      energy,
-      magnetization,
-      stdevEnergy,
-      stdevMagnetization,
-      sweeps,
-    } of row) {
+    for (const result of simulationResults) {
+      const {
+        betaJ,
+        betaH,
+        lattice,
+        energy,
+        magnetization,
+        stdevEnergy,
+        stdevMagnetization,
+        sweeps,
+      } = result;
       const compress = betaJ <= 0.2 ? "deflate" : "rle";
       const compressSync =
         compress === "deflate" ? zlib.deflateSync : rleEncode;
@@ -54,7 +62,7 @@ async function main() {
         compress,
         lattice_size: N,
       };
-      const fileName = `betaj_${betaJ}_betah_${betaH}.json`;
+      const fileName = `betaj_${betaJ.toFixed(6)}_betah_${betaH}.json`;
       const filePath = path.join(outDir, fileName);
       fs.writeFileSync(filePath, JSON.stringify(output, null, 2), "utf-8");
       console.log(`✅ Saved simulation results to ${filePath}`);

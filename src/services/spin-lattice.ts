@@ -124,7 +124,7 @@ export class SpinLattice extends BitPackedArray {
     return -betaJ * s * neighbourSum - betaH * s;
   }
 
-  energy(betaJ: number, betaH: number): number {
+  betaEnergy(betaJ: number, betaH: number): number {
     const N = this.N;
     const N2 = N * N;
     let E_int = 0;
@@ -163,4 +163,37 @@ export class SpinLattice extends BitPackedArray {
 
     return E_int + E_field;
   }
+}
+
+export function mergeLatices(a: SpinLattice, b: SpinLattice): SpinLattice {
+  if (a.latticeSize !== b.latticeSize) {
+    throw new Error(
+      "Lattice sizes must match. Got " + a.latticeSize + " and " + b.latticeSize
+    );
+  }
+  const N = a.latticeSize;
+  const out = new SpinLattice(N);
+
+  for (let i = 0; i < N; i++) {
+    const ai = a[i];
+    const bi = b[i];
+
+    // 1) Which bits differ?
+    const diff = ai ^ bi; // bit = 1 where they differ
+
+    // 2) Keep the bits that are the same
+    //    (~diff) has 1s where they match, but ~diff is 32-bit, so mask down to a byte:
+    const sameMask = ~diff & 0xff;
+    const common = ai & sameMask; // those matching bits
+
+    // 3) For the differing bits, pick random bits:
+    //    generate a random byte (0–255) whose bits are each 50/50, then mask to only the differing bits
+    const randomByte = Math.floor(Math.random() * 256);
+    const randomBits = randomByte & diff;
+
+    // 4) Combine
+    out[i] = common | randomBits;
+  }
+
+  return out;
 }
