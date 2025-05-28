@@ -79,12 +79,7 @@ export default function ConfigSection({
           Temperature <span className="italic">T</span>
           <span className="mx-1">=</span>
           <span>{format(temperature)}</span>
-          <span className="mx-1">K</span>(<span className="italic">J</span>/
-          <span className="italic">k</span>
-          <sub>B</sub>
-          <span className="italic">T</span>
-          <span className="mx-1">=</span>
-          {format(jSign * getBetaJ(temperature, CRITICAL_TEMP))})
+          <span className="mx-1">K</span>
         </label>
         <input
           type="range"
@@ -107,11 +102,9 @@ export default function ConfigSection({
       <div className="mb-4">
         <label className="block text-sm font-medium mb-1">
           External field <span className="italic">h</span>/
-          <span className="italic">k</span>
-          <sub>B</sub>
-          <span className="italic">T</span>
+          <span className="italic">J</span>
           <span className="mx-1">=</span>
-          {betaH.toFixed(1)}
+          {(betaH / getBetaJ(temperature, CRITICAL_TEMP)).toFixed(2)}
         </label>
         <input
           type="range"
