@@ -49,9 +49,9 @@ export default function StatisticalInfo({
     decomposeToScientific(magnetization, stdevMagnetization);
   return (
     <div className="text-sm mt-4 space-y-4">
-      <h2 className="text-lg font-bold mb-2">Statistics</h2>
-      <div className="flex justify-between">
-        <div>
+      <h2 className="text-base sm:text-lg font-bold mb-2">Statistics</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between ml-2">
+        <div className="font-medium mb-1 sm:mb-0">
           <span className="italic">E</span>
           <span className="ml-1">per site</span>:
         </div>
@@ -65,17 +65,19 @@ export default function StatisticalInfo({
         </div>
       </div>
       <div
-        className="flex justify-between"
+        className="flex flex-col sm:flex-row sm:justify-between ml-2"
         title="±sqrt(3(T-Tc)/Tc) at T ~ Tc, h = 0"
       >
-        <div>
+        <div className="font-medium mb-1 sm:mb-0">
           Magnetization (<span className="italic">M</span>):
         </div>
-        <ShowScientific
-          co={magnetizationCo}
-          errCo={stdevMagnetizationErr}
-          pow={magnetizationPow}
-        />
+        <div>
+          <ShowScientific
+            co={magnetizationCo}
+            errCo={stdevMagnetizationErr}
+            pow={magnetizationPow}
+          />
+        </div>
       </div>
     </div>
   );

@@ -39,11 +39,11 @@ export default function ConfigSection({
   }
 
   return (
-    <form className="text-sm mb-4">
-      <h2 className="text-lg font-bold mb-2">Parameters</h2>
+    <form className="text-sm mb-4 max-w-full sm:max-w-sm mx-auto">
+      <h2 className="text-base sm:text-lg font-bold mb-2">Parameters</h2>
 
-      <div className="mb-4">
-        <div className="flex items-center space-x-6 mb-4">
+      <div className="mb-4 ml-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 mb-4 space-y-2 sm:space-y-0">
           <div className="flex items-center">
             <label className="text-sm" title="J > 0">
               <input
@@ -74,7 +74,7 @@ export default function ConfigSection({
           </div>
         </div>
       </div>
-      <div className="mb-4">
+      <div className="mb-4 ml-2">
         <label className="block text-sm font-medium mb-1">
           Temperature <span className="italic">T</span>
           <span className="mx-1">=</span>
@@ -96,10 +96,11 @@ export default function ConfigSection({
           className="w-full"
         />
         <div className="text-xs text-gray-400 mb-4">
-          (Critical temperature &#8776; {format(CRITICAL_TEMP)} K)
+          (Critical <span className="italic">T</span> &#8776;{" "}
+          {format(CRITICAL_TEMP)} K)
         </div>
       </div>
-      <div className="mb-4">
+      <div className="mb-4 ml-2">
         <label className="block text-sm font-medium mb-1">
           External field <span className="italic">h</span>/
           <span className="italic">J</span>
@@ -116,11 +117,11 @@ export default function ConfigSection({
           onChange={(e) =>
             setBetaH(parseFloat(e.target.value) as (typeof beta_hs)[number])
           }
-          className={"w-full mx-auto block"}
+          className="w-full mx-auto block"
         />
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 ml-2">
         <label className="block text-sm font-medium mb-1">
           Slice at <span className="italic">z</span>
           <span className="mx-1">=</span>
@@ -134,7 +135,7 @@ export default function ConfigSection({
           step="1"
           value={z}
           onChange={(e) => setZ(parseInt(e.target.value))}
-          className={`w-full`}
+          className="w-full"
         />
       </div>
     </form>

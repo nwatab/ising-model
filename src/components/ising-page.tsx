@@ -52,19 +52,23 @@ export function IsingPage({
         backgroundSize: `${tileSize}px ${tileSize}px`,
       }}
     >
-      <div className="fixed top-4 left-4 bg-gray-800 p-4 rounded-lg shadow-lg z-10 w-64 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.25)] opacity-85">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold">3D Ising Model</h1>
+      <div className="fixed top-4 left-4 bg-gray-800 p-2 sm:p-4 rounded-lg shadow-lg z-10 w-auto filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.25)] opacity-85">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-base sm:text-lg md:text-xl font-bold">
+            3D Ising Model
+          </h1>
           <a
             href="https://github.com/nwatab/ising-model"
             target="_blank"
             rel="noopener noreferrer"
+            className="flex items-center"
           >
             <Image
               src="/github-mark-white.svg"
               alt="GitHub"
-              width={24}
-              height={24}
+              width={20}
+              height={20}
+              className="w-5 h-5 md:w-6 md:h-6"
             />
           </a>
         </div>
