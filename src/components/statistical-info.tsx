@@ -1,7 +1,14 @@
 import { decomposeToScientific } from "@/utils";
 
-function ShowScientific({ value, error }: { value: number; error: number }) {
-  const [co, errCo, pow] = decomposeToScientific(value, error);
+function ShowScientific({
+  co,
+  errCo,
+  pow,
+}: {
+  co: number;
+  errCo: number;
+  pow: number;
+}) {
   if (pow === 0) {
     return (
       <span className="ml-1">
@@ -36,17 +43,26 @@ export default function StatisticalInfo({
   magnetization: number;
   stdevMagnetization: number;
 }) {
+  const [energyPerSiteCo, energyPerSiteErr, energyPerSitePow] =
+    decomposeToScientific(energyPerSite, stdevEnergyPerSite);
+  const [magnetizationCo, stdevMagnetizationErr, magnetizationPow] =
+    decomposeToScientific(magnetization, stdevMagnetization);
   return (
     <div className="text-sm mt-4 space-y-4">
       <h2 className="text-lg font-bold mb-2">Statistics</h2>
       <div className="flex justify-between">
         <div>
-          <span className="italic">E</span>/<span className="italic">k</span>
-          <sub>B</sub>
-          <span className="italic">T</span>
+          <span className="italic">E</span>
           <span className="ml-1">per site</span>:
         </div>
-        <ShowScientific value={energyPerSite} error={stdevEnergyPerSite} />
+        <div>
+          <ShowScientific
+            co={energyPerSiteCo}
+            errCo={energyPerSiteErr}
+            pow={energyPerSitePow - 23} // ^-23 comes from BOlTZMANN_CONSTANT
+          />
+          <span className="ml-1">[J]</span>
+        </div>
       </div>
       <div
         className="flex justify-between"
@@ -55,7 +71,11 @@ export default function StatisticalInfo({
         <div>
           Magnetization (<span className="italic">M</span>):
         </div>
-        <ShowScientific value={magnetization} error={stdevMagnetization} />
+        <ShowScientific
+          co={magnetizationCo}
+          errCo={stdevMagnetizationErr}
+          pow={magnetizationPow}
+        />
       </div>
     </div>
   );

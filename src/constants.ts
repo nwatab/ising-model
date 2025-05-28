@@ -1,1 +1,2 @@
 export const CRITICAL_BETA_J = 0.221654;
+export const BOLTZMANN_CONSTANT = 1.380649; // 10^-23 J/K

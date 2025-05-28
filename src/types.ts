@@ -1,10 +1,10 @@
 export type SimulationResultOnDisk = {
   lattice: string;
-  betaJ: number;
-  betaH: number;
-  energy: number;
+  beta_j: number;
+  beta_h: number;
+  beta_energy: number;
   magnetization: number;
-  stdev_energy: number;
+  stdev_beta_energy: number;
   stdev_magnetization: number;
   sweeps: number;
   compress: string;

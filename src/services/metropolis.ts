@@ -90,7 +90,7 @@ export function sweepEnergiesMetropolis(
     lattice: SpinLattice;
     betaJ: number;
     betaH: number;
-    energy: number;
+    betaEnergy: number;
     magnetization: number;
     stdevEnergy: number;
     stdevMagnetization: number;
@@ -100,7 +100,7 @@ export function sweepEnergiesMetropolis(
       lattice: new SpinLattice(N),
       betaJ: 0,
       betaH: 0,
-      energy: 0,
+      betaEnergy: 0,
       magnetization: 0,
       stdevEnergy: 0,
       stdevMagnetization: 0,
@@ -244,7 +244,7 @@ function calculateMeasurements(
   SWEEPS_MEASURE: number,
   SWEEPS_MEASURE_INTERVAL: number
 ) {
-  const { energies, magnetizations } = Array.from<{
+  const { betaEnergies: energies, magnetizations } = Array.from<{
     energies: number[];
     magnetizations: number[];
     lattices: SpinLattice[];
@@ -259,29 +259,30 @@ function calculateMeasurements(
         betaH,
         SWEEPS_MEASURE_INTERVAL
       );
-      acc.energies.push(nextLattice.betaEnergy(betaJ, betaH));
+      acc.betaEnergies.push(nextLattice.betaEnergy(betaJ, betaH));
       acc.magnetizations.push(nextLattice.magnetization());
       acc.lattices.push(nextLattice);
       return acc;
     },
     {
-      energies: [lattice.betaEnergy(betaJ, betaH)],
+      betaEnergies: [lattice.betaEnergy(betaJ, betaH)],
       magnetizations: [lattice.magnetization()],
       lattices: [lattice],
     }
   );
-  const energy = energies.reduce((a, b) => a + b, 0) / energies.length;
+  const betaEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
   const magnetization =
     magnetizations.reduce((a, b) => a + b, 0) / magnetizations.length;
   const stdevEnergy = Math.sqrt(
-    energies.reduce((a, b) => a + (b - energy) ** 2, 0) / (energies.length - 1)
+    energies.reduce((a, b) => a + (b - betaEnergy) ** 2, 0) /
+      (energies.length - 1)
   );
   const stdevMagnetization = Math.sqrt(
     magnetizations.reduce((a, b) => a + (b - magnetization) ** 2, 0) /
       (magnetizations.length - 1)
   );
   return {
-    energy,
+    betaEnergy,
     magnetization,
     stdevEnergy,
     stdevMagnetization,

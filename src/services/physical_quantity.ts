@@ -1,4 +1,4 @@
-import { CRITICAL_BETA_J } from "@/constants";
+import { BOLTZMANN_CONSTANT, CRITICAL_BETA_J } from "@/constants";
 
 /**
  * β_c J = J/k_B T_c = 0.221654 at critical point.
@@ -16,4 +16,12 @@ export function getBetaJ(T: number, Tc: number) {
   }
   const betaJ = CRITICAL_BETA_J * (Tc / T);
   return betaJ;
+}
+
+export function getkT(betaJ: number) {
+  // J/kT_{c} = CRITICAL_POINT
+  // kT = J /beta_j ( ∵ beta_j = J / kT )
+  //    = CRITICAL_POINT kTc /beta_j ( ∵ J = kT_{c} CRITICAL_POINT )
+  const kT = (CRITICAL_BETA_J * BOLTZMANN_CONSTANT) / betaJ;
+  return kT;
 }

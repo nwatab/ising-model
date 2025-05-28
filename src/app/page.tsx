@@ -4,7 +4,7 @@ import { IsingPage } from "@/components/ising-page";
 import { temperatures, beta_hs, CRITICAL_TEMP } from "@/config";
 import { Suspense } from "react";
 import { SimulationResultOnDisk } from "@/types";
-import { getBetaJ } from "@/services/betaj";
+import { getBetaJ, getkT } from "@/services/physical_quantity";
 
 export default function Home() {
   const betaJs = ([-1, 1] as const).flatMap((jSign) =>
@@ -12,10 +12,16 @@ export default function Home() {
   );
 
   const simulationResults = betaJs.flatMap((betaJ) =>
-    beta_hs.flatMap<SimulationResultOnDisk>((betah) => {
-      const path = `data/betaj_${betaJ.toFixed(6)}_betah_${betah}.json`;
-      return JSON.parse(fs.readFileSync(path, "utf8"));
-    })
+    beta_hs
+      .flatMap<SimulationResultOnDisk>((betah) => {
+        const path = `data/betaj_${betaJ.toFixed(6)}_betah_${betah}.json`;
+        return JSON.parse(fs.readFileSync(path, "utf8"));
+      })
+      .map((result) => ({
+        ...result,
+        energy: getkT(result.beta_j) * result.beta_energy,
+        stdev_energy: getkT(result.beta_j) * result.stdev_beta_energy,
+      }))
   );
 
   const troublesomeResult = simulationResults.find(

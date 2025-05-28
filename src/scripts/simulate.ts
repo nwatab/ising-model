@@ -8,7 +8,7 @@ import { temperatures, beta_hs, CRITICAL_TEMP } from "../config";
 import { sweepEnergiesMetropolis } from "../services/metropolis";
 import { rleEncode } from "../services/rle";
 import type { SimulationResultOnDisk } from "@/types";
-import { getBetaJ } from "@/services/betaj";
+import { getBetaJ } from "@/services/physical_quantity";
 
 async function main() {
   const { values: raw } = parseArgs({
@@ -40,7 +40,7 @@ async function main() {
         betaJ,
         betaH,
         lattice,
-        energy,
+        betaEnergy: energy,
         magnetization,
         stdevEnergy,
         stdevMagnetization,
@@ -52,11 +52,11 @@ async function main() {
 
       const output: SimulationResultOnDisk = {
         lattice: Buffer.from(compressSync(lattice)).toString("base64"),
-        betaJ,
-        betaH,
-        energy,
+        beta_j: betaJ,
+        beta_h: betaH,
+        beta_energy: energy,
         magnetization,
-        stdev_energy: stdevEnergy,
+        stdev_beta_energy: stdevEnergy,
         stdev_magnetization: stdevMagnetization,
         sweeps,
         compress,

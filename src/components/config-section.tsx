@@ -1,7 +1,7 @@
 "use client";
 
 import { beta_hs, CRITICAL_TEMP, temperatures } from "@/config";
-import { getBetaJ } from "@/services/betaj";
+import { getBetaJ } from "@/services/physical_quantity";
 import React from "react";
 
 export default function ConfigSection({

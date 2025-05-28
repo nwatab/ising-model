@@ -10,13 +10,16 @@ import StatisticalInfo from "./statistical-info";
 import { SimulationResultOnDisk } from "@/types";
 import { rleDecode } from "@/services/rle";
 import { SpinLattice } from "@/services/spin-lattice";
-import { getBetaJ } from "@/services/betaj";
+import { getBetaJ } from "@/services/physical_quantity";
 import PhaseSection from "./phase-section";
 
 export function IsingPage({
   simulationResults: results,
 }: {
-  simulationResults: SimulationResultOnDisk[];
+  simulationResults: (SimulationResultOnDisk & {
+    energy: number;
+    stdev_energy: number;
+  })[];
 }) {
   const N = results[0].lattice_size;
   const initialTemp = temperatures[Math.floor(temperatures.length / 2)];
@@ -27,7 +30,7 @@ export function IsingPage({
   const [betaH, setBetaH] = React.useState<(typeof beta_hs)[number]>(0);
   const [z, setZ] = React.useState(Math.floor(N / 2));
   const betaJ = jSign * getBetaJ(temp, CRITICAL_TEMP);
-  const result = results.find((r) => r.betaJ === betaJ && r.betaH === betaH);
+  const result = results.find((r) => r.beta_j === betaJ && r.beta_h === betaH);
   if (result === undefined) {
     throw new Error(
       `Simulation result not found for betaJ ${betaJ}, betaH ${betaH}`
