@@ -10,10 +10,7 @@ export function generateSVGDataURL(lattice: SpinLattice, z: number): string {
   for (let y = 0; y < N; y++) {
     for (let x = 0; x < N; x++) {
       const spin = lattice.getSpin({ x, y, z });
-      const fill =
-        spin > 0
-          ? "oklch(47% 0.157 37.304)" /* orange-800 */
-          : "oklch(45% 0.085 224.283)"; /* cyan-800 */
+      const fill = spin > 0 ? "#e0cb96" : "#313438";
       rects.push(
         `<rect x="${x}" y="${y}" width="1" height="1" fill="${fill}" />`
       );
