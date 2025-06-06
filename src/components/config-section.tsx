@@ -84,6 +84,7 @@ export default function ConfigSection({
         <input
           type="range"
           name="temperature"
+          list="temperature-ticks"
           min={temperatures[0]}
           max={temperatures[temperatures.length - 1]}
           step={temperatures[1] - temperatures[0]}
@@ -95,6 +96,11 @@ export default function ConfigSection({
           }
           className="w-full"
         />
+        <datalist id="temperature-ticks">
+          {temperatures.map((temp) => (
+            <option key={temp} value={temp} />
+          ))}
+        </datalist>
         <div className="text-xs text-gray-400 mb-4">
           (Critical <span className="italic">T</span> &#8776;{" "}
           {format(CRITICAL_TEMP)} K)
@@ -110,6 +116,7 @@ export default function ConfigSection({
         <input
           type="range"
           name="betaH"
+          list="betah-ticks"
           min={beta_hs[0]}
           max={beta_hs[beta_hs.length - 1]}
           step={beta_hs[1] - beta_hs[0]}
@@ -119,6 +126,11 @@ export default function ConfigSection({
           }
           className="w-full mx-auto block"
         />
+        <datalist id="betah-ticks">
+          {beta_hs.map((betah) => (
+            <option key={betah} value={betah} />
+          ))}
+        </datalist>
       </div>
 
       <div className="mb-4 ml-2">
