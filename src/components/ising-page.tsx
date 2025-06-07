@@ -10,16 +10,14 @@ import StatisticalInfo from "./statistical-info";
 import { SimulationResultOnDisk } from "@/types";
 import { rleDecode } from "@/services/rle";
 import { SpinLattice } from "@/services/spin-lattice";
-import { getBetaJ } from "@/services/physical_quantity";
+import { getBetaJ, getkT } from "@/services/physical_quantity";
 import PhaseSection from "./phase-section";
+import { calcMeanAndStdev } from "@/utils";
 
 export function IsingPage({
   simulationResults: results,
 }: {
-  simulationResults: (SimulationResultOnDisk & {
-    energy: number;
-    stdev_energy: number;
-  })[];
+  simulationResults: SimulationResultOnDisk[];
 }) {
   const N = results[0].lattice_size;
   const initialTemp = temperatures[Math.floor(temperatures.length / 2)];
@@ -42,6 +40,15 @@ export function IsingPage({
   const lattice = new SpinLattice(decompressSync(latticeCompressed));
   const svgDataUrl = generateSVGDataURL(lattice, z);
   const tileSize = getTileSize(16, N);
+
+  const [meanBetaEnergy, stdevBetaEnergy] = calcMeanAndStdev(
+    result.beta_energies
+  );
+  const [magnetization, stdevMagnetization] = calcMeanAndStdev(
+    result.magnetizations
+  );
+  const energy = getkT(result.beta_j) * meanBetaEnergy;
+  const stdevEnergy = getkT(result.beta_j) * stdevBetaEnergy;
 
   return (
     <div
@@ -85,10 +92,10 @@ export function IsingPage({
         />
         <PhaseSection betaJ={betaJ} />
         <StatisticalInfo
-          energyPerSite={result.energy / (result.lattice_size ^ 3)}
-          stdevEnergyPerSite={result.stdev_energy / (result.lattice_size ^ 3)}
-          magnetization={result.magnetization}
-          stdevMagnetization={result.stdev_magnetization}
+          energyPerSite={energy / (result.lattice_size ^ 3)}
+          stdevEnergyPerSite={stdevEnergy / (result.lattice_size ^ 3)}
+          magnetization={magnetization}
+          stdevMagnetization={stdevMagnetization}
         />
       </div>
     </div>

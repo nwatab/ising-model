@@ -21,3 +21,24 @@ export function decomposeToScientific(
   const errorCoefficient = error / power;
   return [coefficient, errorCoefficient, exponent];
 }
+
+export function calcMeanAndStdev(values: number[]) {
+  if (values.length === 0) {
+    throw new Error(
+      "Cannot calculate mean and standard deviation of an empty array"
+    );
+  }
+
+  const mean = values.reduce((acc, v) => acc + v, 0) / values.length;
+
+  // For Ising model time evolution statistics, use sample standard deviation (n-1)
+  if (values.length === 1) {
+    // Single sample: standard deviation is undefined, return 0
+    return [mean, 0];
+  }
+
+  const stdev = Math.sqrt(
+    values.reduce((acc, v) => acc + (v - mean) ** 2, 0) / (values.length - 1)
+  );
+  return [mean, stdev];
+}
