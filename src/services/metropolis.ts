@@ -54,14 +54,13 @@ export function estimateSweeps(betaJ: number): number {
  * Sweep the lattice in a 3D Ising model using the Metropolis algorithm.
  * @param betaJs - Array of betaJ values. The center value is 0.
  * @param betaHs - Array of betaH values. The center value is 0.
- * @param N - Size of the lattice (N x N x N).
- * @param jSign - Sign of J. 1 for para/ferromagnetic, -1 for para/antiferromagnetic.
+ * @param latticeSize - Size of the lattice (N x N x N).
  * @returns A 2D array of SpinArray representing the lattice at each (betaJ, betaH) point.
  */
 export function sweepEnergiesMetropolis(
   betaJs: readonly number[], // 0, ..., betaJ
   betaHs: readonly number[], // 0, ..., betaH
-  N: number
+  latticeSize: number
 ) {
   const SWEEPS_PARAMAGNETIC = 100;
   const SWEEPS_ANTIFERROMAGNETIC = 100;
@@ -90,20 +89,16 @@ export function sweepEnergiesMetropolis(
     lattice: SpinLattice;
     betaJ: number;
     betaH: number;
-    betaEnergy: number;
-    magnetization: number;
-    stdevEnergy: number;
-    stdevMagnetization: number;
+    betaEnergies: number[];
+    magnetizations: number[];
     sweeps: number;
   }[][] = Array.from({ length: betaJs.length }, () =>
     Array.from({ length: betaHs.length }, () => ({
-      lattice: new SpinLattice(N),
+      lattice: new SpinLattice(latticeSize),
       betaJ: 0,
       betaH: 0,
-      betaEnergy: 0,
-      magnetization: 0,
-      stdevEnergy: 0,
-      stdevMagnetization: 0,
+      betaEnergies: [],
+      magnetizations: [],
       sweeps: 0,
     }))
   );
@@ -112,7 +107,7 @@ export function sweepEnergiesMetropolis(
   const betaHZeroIndex = 0;
   const sweeps = calcSweepsForMagnetic(betaJs[betaJZeroIndex]);
   const initLattice = simulateMetropolis(
-    SpinLattice.createRandom(N),
+    SpinLattice.createRandom(latticeSize),
     betaJs[betaJZeroIndex],
     betaHs[betaHZeroIndex],
     sweeps
@@ -122,7 +117,6 @@ export function sweepEnergiesMetropolis(
     initLattice,
     betaJs[betaJZeroIndex],
     betaHs[betaHZeroIndex],
-    N,
     SWEEPS_MEASURE,
     SWEEPS_MEASURE_INTERVAL
   );
@@ -149,7 +143,6 @@ export function sweepEnergiesMetropolis(
         lattice,
         betaJ,
         betaH,
-        N,
         SWEEPS_MEASURE,
         SWEEPS_MEASURE_INTERVAL
       );
@@ -181,7 +174,6 @@ export function sweepEnergiesMetropolis(
         lattice,
         betaJ,
         betaH,
-        N,
         SWEEPS_MEASURE,
         SWEEPS_MEASURE_INTERVAL
       );
@@ -217,7 +209,6 @@ export function sweepEnergiesMetropolis(
         lattice,
         betaJ,
         betaH,
-        N,
         SWEEPS_MEASURE,
         SWEEPS_MEASURE_INTERVAL
       );
@@ -240,51 +231,33 @@ function calculateMeasurements(
   lattice: SpinLattice,
   betaJ: number,
   betaH: number,
-  N: number,
   SWEEPS_MEASURE: number,
   SWEEPS_MEASURE_INTERVAL: number
 ) {
-  const { betaEnergies: energies, magnetizations } = Array.from<{
+  const { betaEnergies, magnetizations } = Array.from<{
     energies: number[];
     magnetizations: number[];
-    lattices: SpinLattice[];
     lattice: SpinLattice;
   }>({
     length: SWEEPS_MEASURE - 1,
   }).reduce(
     (acc) => {
       const nextLattice = simulateMetropolis(
-        lattice,
+        acc.lattice,
         betaJ,
         betaH,
         SWEEPS_MEASURE_INTERVAL
       );
       acc.betaEnergies.push(nextLattice.betaEnergy(betaJ, betaH));
       acc.magnetizations.push(nextLattice.magnetization());
-      acc.lattices.push(nextLattice);
+      acc.lattice = nextLattice;
       return acc;
     },
     {
       betaEnergies: [lattice.betaEnergy(betaJ, betaH)],
       magnetizations: [lattice.magnetization()],
-      lattices: [lattice],
+      lattice: lattice,
     }
   );
-  const betaEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
-  const magnetization =
-    magnetizations.reduce((a, b) => a + b, 0) / magnetizations.length;
-  const stdevEnergy = Math.sqrt(
-    energies.reduce((a, b) => a + (b - betaEnergy) ** 2, 0) /
-      (energies.length - 1)
-  );
-  const stdevMagnetization = Math.sqrt(
-    magnetizations.reduce((a, b) => a + (b - magnetization) ** 2, 0) /
-      (magnetizations.length - 1)
-  );
-  return {
-    betaEnergy,
-    magnetization,
-    stdevEnergy,
-    stdevMagnetization,
-  };
+  return { betaEnergies, magnetizations };
 }

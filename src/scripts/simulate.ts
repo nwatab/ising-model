@@ -36,16 +36,8 @@ async function main() {
     fs.mkdirSync(outDir, { recursive: true });
 
     for (const result of simulationResults) {
-      const {
-        betaJ,
-        betaH,
-        lattice,
-        betaEnergy: energy,
-        magnetization,
-        stdevEnergy,
-        stdevMagnetization,
-        sweeps,
-      } = result;
+      const { betaJ, betaH, lattice, betaEnergies, magnetizations, sweeps } =
+        result;
       const compress = betaJ <= 0.2 ? "deflate" : "rle";
       const compressSync =
         compress === "deflate" ? zlib.deflateSync : rleEncode;
@@ -54,10 +46,8 @@ async function main() {
         lattice: Buffer.from(compressSync(lattice)).toString("base64"),
         beta_j: betaJ,
         beta_h: betaH,
-        beta_energy: energy,
-        magnetization,
-        stdev_beta_energy: stdevEnergy,
-        stdev_magnetization: stdevMagnetization,
+        beta_energies: betaEnergies,
+        magnetizations,
         sweeps,
         compress,
         lattice_size: N,
