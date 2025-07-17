@@ -2,7 +2,7 @@
 import React from "react";
 import zlib from "zlib";
 import Image from "next/image";
-import { temperatures, CRITICAL_TEMP, beta_hs } from "@/config";
+import { temperatures, CRITICAL_TEMP, beta_hs, j2j1ratio } from "@/config";
 import { generateSVGDataURL, getTileSize } from "@/services/svg-lattice";
 
 import ConfigSection from "./config-section";
@@ -26,12 +26,13 @@ export function IsingPage({
   const [temp, setTemp] = React.useState(initialTemp);
   const [jSign, setJSign] = React.useState<1 | -1>(1);
   const [betaH, setBetaH] = React.useState<(typeof beta_hs)[number]>(0);
+  const [j2j1Ratio, setJ2j1Ratio] = React.useState<(typeof j2j1ratio)[number]>(0);
   const [z, setZ] = React.useState(Math.floor(N / 2));
   const betaJ = jSign * getBetaJ(temp, CRITICAL_TEMP);
-  const result = results.find((r) => r.beta_j === betaJ && r.beta_h === betaH);
+  const result = results.find((r) => r.beta_j === betaJ && r.beta_h === betaH && r.j2j1ratio === j2j1Ratio);
   if (result === undefined) {
     throw new Error(
-      `Simulation result not found for betaJ ${betaJ}, betaH ${betaH}`
+      `Simulation result not found for betaJ ${betaJ}, betaH ${betaH}, j2j1ratio ${j2j1Ratio}`
     );
   }
   const latticeCompressed = Buffer.from(result.lattice, "base64");
@@ -84,6 +85,8 @@ export function IsingPage({
           setTemperature={setTemp}
           betaH={betaH}
           setBetaH={setBetaH}
+          j2j1Ratio={j2j1Ratio}
+          setJ2j1Ratio={setJ2j1Ratio}
           z={z}
           setZ={setZ}
           jSign={jSign}
