@@ -1,6 +1,6 @@
 "use client";
 
-import { beta_hs, CRITICAL_TEMP, temperatures } from "@/config";
+import { beta_hs, CRITICAL_TEMP, temperatures, j2j1ratio } from "@/config";
 import { getBetaJ } from "@/services/physical_quantity";
 import React from "react";
 
@@ -11,6 +11,8 @@ export default function ConfigSection({
   setJSign,
   betaH,
   setBetaH,
+  j2j1Ratio,
+  setJ2j1Ratio,
   z,
   setZ,
   latticeSize,
@@ -23,6 +25,8 @@ export default function ConfigSection({
   setJSign: React.Dispatch<React.SetStateAction<1 | -1>>;
   betaH: number;
   setBetaH: React.Dispatch<React.SetStateAction<(typeof beta_hs)[number]>>;
+  j2j1Ratio: number;
+  setJ2j1Ratio: React.Dispatch<React.SetStateAction<(typeof j2j1ratio)[number]>>;
   z: number;
   setZ: React.Dispatch<React.SetStateAction<number>>;
   latticeSize: number;
@@ -129,6 +133,33 @@ export default function ConfigSection({
         <datalist id="betah-ticks">
           {beta_hs.map((betah) => (
             <option key={betah} value={betah} />
+          ))}
+        </datalist>
+      </div>
+
+      <div className="mb-4 ml-2">
+        <label className="block text-sm font-medium mb-1">
+          2nd neighbor coupling <span className="italic">J₂</span>/
+          <span className="italic">J₁</span>
+          <span className="mx-1">=</span>
+          {j2j1Ratio.toFixed(2)}
+        </label>
+        <input
+          type="range"
+          name="j2j1Ratio"
+          list="j2j1-ticks"
+          min={j2j1ratio[0]}
+          max={j2j1ratio[j2j1ratio.length - 1]}
+          step={j2j1ratio[1] - j2j1ratio[0]}
+          value={j2j1Ratio}
+          onChange={(e) =>
+            setJ2j1Ratio(parseFloat(e.target.value) as (typeof j2j1ratio)[number])
+          }
+          className="w-full mx-auto block"
+        />
+        <datalist id="j2j1-ticks">
+          {j2j1ratio.map((ratio) => (
+            <option key={ratio} value={ratio} />
           ))}
         </datalist>
       </div>
