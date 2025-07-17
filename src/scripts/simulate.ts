@@ -4,7 +4,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import zlib from "node:zlib";
 
-import { temperatures, beta_hs, CRITICAL_TEMP } from "../config";
+import { temperatures, beta_hs, CRITICAL_TEMP, j2j1ratio } from "../config";
 import { sweepEnergiesMetropolis } from "../services/metropolis";
 import { rleEncode } from "../services/rle";
 import type { SimulationResultOnDisk } from "@/types";
@@ -29,6 +29,7 @@ async function main() {
     const simulationResults = sweepEnergiesMetropolis(
       beta_js,
       beta_hs,
+      j2j1ratio,
       N
     ).flat();
 

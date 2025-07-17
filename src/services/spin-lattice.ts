@@ -101,16 +101,21 @@ export class SpinLattice extends BitPackedArray {
 
   magnetization(): number {
     return this.sumSpins() / this.spinCount;
-  } /** in class BitPackedSpinArray */
-  /** in class SpinArray */
+  }
+
   /**
-   * Local energy of the spin at `coord`:
-   *   –J sᵢ ∑⟨i,j⟩ sⱼ  − H sᵢ
+   * Local energy of the spin at `(x, y, z)` coordinate:
+   *   –J sᵢ ∑⟨i,j⟩ sⱼ  − H sᵢ − J₂ sᵢ ∑⟨⟨i,k⟩⟩ sₖ
    */
-  energyAt({ x, y, z }: Coord3D, betaJ: number, betaH: number): number {
+  betaEnergyOfSpinAt(
+    { x, y, z }: Coord3D,
+    betaJ: number,
+    betaH: number,
+    betaJ2: number
+  ): number {
     const s = this.getSpin({ x, y, z });
 
-    // sum over the six neighbours with periodic wrapping
+    // sum over the six nearest neighbours with periodic wrapping
     const sxp = this.getSpin({ x: x + 1, y, z });
     const sxm = this.getSpin({ x: x - 1, y, z });
     const syp = this.getSpin({ x, y: y + 1, z });
@@ -120,14 +125,42 @@ export class SpinLattice extends BitPackedArray {
 
     const neighbourSum = sxp + sxm + syp + sym + szp + szm;
 
+    // sum over the twelve second nearest neighbours (face diagonals)
+    let secondNeighbourSum = 0;
+    if (betaJ2 !== 0) {
+      // xy face diagonals
+      secondNeighbourSum += this.getSpin({ x: x + 1, y: y + 1, z });
+      secondNeighbourSum += this.getSpin({ x: x + 1, y: y - 1, z });
+      secondNeighbourSum += this.getSpin({ x: x - 1, y: y + 1, z });
+      secondNeighbourSum += this.getSpin({ x: x - 1, y: y - 1, z });
+
+      // xz face diagonals
+      secondNeighbourSum += this.getSpin({ x: x + 1, y, z: z + 1 });
+      secondNeighbourSum += this.getSpin({ x: x + 1, y, z: z - 1 });
+      secondNeighbourSum += this.getSpin({ x: x - 1, y, z: z + 1 });
+      secondNeighbourSum += this.getSpin({ x: x - 1, y, z: z - 1 });
+
+      // yz face diagonals
+      secondNeighbourSum += this.getSpin({ x, y: y + 1, z: z + 1 });
+      secondNeighbourSum += this.getSpin({ x, y: y + 1, z: z - 1 });
+      secondNeighbourSum += this.getSpin({ x, y: y - 1, z: z + 1 });
+      secondNeighbourSum += this.getSpin({ x, y: y - 1, z: z - 1 });
+    }
+
     // interaction energy plus field energy
-    return -betaJ * s * neighbourSum - betaH * s;
+    // E = -J₁ sᵢ ∑ⱼ sⱼ - J₂ sᵢ ∑ₖ sₖ - H sᵢ
+    // where J₂ = J₁ * j2j1ratio
+
+    return (
+      -betaJ * s * neighbourSum - betaJ2 * s * secondNeighbourSum - betaH * s
+    );
   }
 
-  betaEnergy(betaJ: number, betaH: number): number {
+  betaEnergy(betaJ: number, betaH: number, betaJ2: number = 0): number {
     const N = this.N;
     const N2 = N * N;
     let E_int = 0;
+    let E_int2 = 0; // second nearest neighbor energy
     let idx = 0;
 
     // 1) loop once over every spin, track linear idx
@@ -135,7 +168,7 @@ export class SpinLattice extends BitPackedArray {
       for (let y = 0; y < N; y++) {
         for (let x = 0; x < N; x++, idx++) {
           // inline getSpin:
-          const byte = idx >> 3; // loor(idx/8)
+          const byte = idx >> 3; // floor(idx/8)
           const offset = idx & 0b111; // mod 8
           const s = (this[byte] >> offset) & 1 ? 1 : -1;
 
@@ -151,8 +184,35 @@ export class SpinLattice extends BitPackedArray {
           const idxZ = z < N - 1 ? idx + N2 : idx - N2 * (N - 1);
           const sz = (this[idxZ >> 3] >> (idxZ & 7)) & 1 ? 1 : -1;
 
-          // accumulate internal energy
+          // accumulate nearest neighbor energy
           E_int -= betaJ * (s * sx + s * sy + s * sz);
+
+          // accumulate second nearest neighbor energy if betaJ2 != 0
+          if (betaJ2 !== 0) {
+            // Only count positive direction neighbors to avoid double counting
+            // xy face diagonals
+            const xp_yp = ((x + 1) % N) + N * ((y + 1) % N) + N2 * z;
+            const xp_ym = ((x + 1) % N) + N * ((y - 1 + N) % N) + N2 * z;
+            const s_xp_yp = (this[xp_yp >> 3] >> (xp_yp & 7)) & 1 ? 1 : -1;
+            const s_xp_ym = (this[xp_ym >> 3] >> (xp_ym & 7)) & 1 ? 1 : -1;
+
+            // xz face diagonals
+            const xp_zp = ((x + 1) % N) + N * y + N2 * ((z + 1) % N);
+            const xp_zm = ((x + 1) % N) + N * y + N2 * ((z - 1 + N) % N);
+            const s_xp_zp = (this[xp_zp >> 3] >> (xp_zp & 7)) & 1 ? 1 : -1;
+            const s_xp_zm = (this[xp_zm >> 3] >> (xp_zm & 7)) & 1 ? 1 : -1;
+
+            // yz face diagonals
+            const yp_zp = x + N * ((y + 1) % N) + N2 * ((z + 1) % N);
+            const yp_zm = x + N * ((y + 1) % N) + N2 * ((z - 1 + N) % N);
+            const s_yp_zp = (this[yp_zp >> 3] >> (yp_zp & 7)) & 1 ? 1 : -1;
+            const s_yp_zm = (this[yp_zm >> 3] >> (yp_zm & 7)) & 1 ? 1 : -1;
+
+            E_int2 -=
+              betaJ2 *
+              s *
+              (s_xp_yp + s_xp_ym + s_xp_zp + s_xp_zm + s_yp_zp + s_yp_zm);
+          }
         }
       }
     }
@@ -161,38 +221,51 @@ export class SpinLattice extends BitPackedArray {
     const sum = this.sumSpins(); // net ∑ s_i over all N³ spins
     const E_field = -betaH * sum;
 
-    return E_int + E_field;
+    return E_int + E_int2 + E_field;
   }
 }
 
-export function mergeLatices(a: SpinLattice, b: SpinLattice): SpinLattice {
-  if (a.latticeSize !== b.latticeSize) {
+export function mergeLattices(...lattices: SpinLattice[]): SpinLattice {
+  if (lattices.length < 2) {
     throw new Error(
-      "Lattice sizes must match. Got " + a.latticeSize + " and " + b.latticeSize
+      `Need at least two lattices to merge, got ${lattices.length}`
     );
   }
-  const N = a.latticeSize;
+
+  const N = lattices[0].latticeSize;
+  // make sure they all have the same size
+  for (const lat of lattices) {
+    if (lat.latticeSize !== N) {
+      throw new Error(
+        `Lattice sizes must match. Got ${N} and ${lat.latticeSize}`
+      );
+    }
+  }
+
   const out = new SpinLattice(N);
 
   for (let i = 0; i < N; i++) {
-    const ai = a[i];
-    const bi = b[i];
+    // gather the byte at index i from each lattice
+    let andByte = 0xff; // will end up with 1s only where all bits = 1
+    let orByte = 0x00; // will end up with 0s only where all bits = 0
+    for (const lat of lattices) {
+      const v = lat[i];
+      andByte &= v;
+      orByte |= v;
+    }
 
-    // 1) Which bits differ?
-    const diff = ai ^ bi; // bit = 1 where they differ
+    // bits that differ across lattices:
+    const diff = orByte ^ andByte;
 
-    // 2) Keep the bits that are the same
-    //    (~diff) has 1s where they match, but ~diff is 32-bit, so mask down to a byte:
-    const sameMask = ~diff & 0xff;
-    const common = ai & sameMask; // those matching bits
+    // any bit where all lattices agree—AND=1 (all 1) or OR=0 (all 0)
+    // common bits are exactly those in andByte (1s where all 1, 0s where all 0)
+    const common = andByte;
 
-    // 3) For the differing bits, pick random bits:
-    //    generate a random byte (0–255) whose bits are each 50/50, then mask to only the differing bits
+    // randomize only the differing bits
     const randomByte = Math.floor(Math.random() * 256);
     const randomBits = randomByte & diff;
 
-    // 4) Combine
-    out[i] = common | randomBits;
+    out[i] = (common | randomBits) & 0xff;
   }
 
   return out;
