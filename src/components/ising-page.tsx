@@ -21,13 +21,12 @@ export function IsingPage({
 }) {
   const N = results[0].lattice_size;
   const initialTemp = temperatures[Math.floor(temperatures.length / 2)];
-  // const N = parseInt(process.env.NEXT_PUBLIC_N ?? "32");
-  // const [betaJ, setBetaJ] = useState(0);
-  const [temp, setTemp] = React.useState(initialTemp);
+  const initialBetaJMag = getBetaJ(initialTemp, CRITICAL_TEMP);
+  const [betaJMag, setBetaJMag] = React.useState(initialBetaJMag);
   const [jSign, setJSign] = React.useState<1 | -1>(1);
   const [betaH, setBetaH] = React.useState<(typeof beta_hs)[number]>(0);
   const [z, setZ] = React.useState(Math.floor(N / 2));
-  const betaJ = jSign * getBetaJ(temp, CRITICAL_TEMP);
+  const betaJ = jSign * betaJMag;
   const result = results.find((r) => r.beta_j === betaJ && r.beta_h === betaH);
   if (result === undefined) {
     throw new Error(
@@ -80,8 +79,8 @@ export function IsingPage({
           </a>
         </div>
         <ConfigSection
-          temperature={temp}
-          setTemperature={setTemp}
+          betaJMag={betaJMag}
+          setBetaJMag={setBetaJMag}
           betaH={betaH}
           setBetaH={setBetaH}
           z={z}
