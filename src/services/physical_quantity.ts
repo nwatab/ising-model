@@ -25,3 +25,18 @@ export function getkT(betaJ: number) {
   const kT = (CRITICAL_BETA_J * BOLTZMANN_CONSTANT) / betaJ;
   return kT;
 }
+
+/**
+ * Convert dimensionless βJ back to temperature T.
+ * Inverse of getBetaJ: T = T_c * (β_c J) / (βJ)
+ * @param betaJ Dimensionless inverse temperature parameter
+ * @param Tc Critical temperature in Kelvin
+ * @return Temperature in Kelvin
+ */
+export function getTemperatureFromBetaJ(betaJ: number, Tc: number) {
+  if (betaJ === 0) {
+    throw new Error("betaJ must not be zero");
+  }
+  const T = Tc * (CRITICAL_BETA_J / betaJ);
+  return T;
+}

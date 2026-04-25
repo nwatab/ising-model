@@ -1,74 +1,173 @@
-# 3D Ising Model Simulation
+# J₁-J₂ Ising Model Interactive Visualization
 
-This project provides an interactive web-based simulation of the 3D Ising model, a mathematical model in statistical mechanics used to study phase transitions and critical phenomena in ferromagnetic materials.
+J₁-J₂ Ising模型のインタラクティブWeb可視化・シミュレーションツール。
+事前計算されたスピン配置スナップショットをSSG（静的サイト生成）で配信し、ブラウザ側でWebAssemblyによるMetropolisシミュレーションを継続実行できる構成。
 
-## Features
+## 物理モデル
 
-- Interactive 3D visualization of the Ising model
-- Precomputed simulation results for efficient rendering
-- Adjustable temperature parameter ($T\[\mathrm{K}]$
-  ), including near the critical point ($k_{\mathrm B}T/J \approx 4.5$)
-- Adjustable external magnetic field ($h/k_{\mathrm B}T$)
-- Interactive visualization of a 2D slice through the 3D lattice
-- Real-time energy and magnetization measurements
+### ハミルトニアン
 
-## Physics Background
-
-The Ising model represents a lattice of spins that can be in one of two states: up (+1) or down (-1). Each spin interacts with its nearest neighbors. The Hamiltonian (energy) of the system is given by:
-
-```math
-H = -J \sum_{\langle i, j\rangle} s_{i} s_{j} - h \sum_{i} s_{i}
+```
+βH = −K₁ Σ_{⟨ij⟩} sᵢsⱼ − K₂ Σ_{⟪ij⟫} sᵢsⱼ − h̃ Σᵢ sᵢ
 ```
 
-Where:
+- sᵢ ∈ {+1, −1}（Isingスピン）
+- ⟨ij⟩: 最近接ペア、⟪ij⟫: 次近接ペア
+- 周期境界条件
 
-- $${\langle i, j\rangle} $$ is the nearest neighboring pairs
-- $$J \in \mathbb{R}$$ is the coupling constant between neighboring spins
-- $$h \in \mathbb{R}$$ is the external magnetic field
-- $$s_{i} \in \lbrace-1, 1\rbrace$$ is the spin at site $i$
+### パラメータ空間
+
+正準表現（計算層）: **(K₁, K₂, h̃)** — Metropolisの受理確率計算はこの空間で行う。
+
+| 記号 | 定義 | 意味 |
+|------|------|------|
+| K₁ | βJ₁ = J₁ / k_BT | 最近接結合（正: FM、負: AFM） |
+| K₂ | βJ₂ | 次近接結合 |
+| h̃ | βh | 無次元外場 |
+
+高温極限は原点 K₁ = K₂ = h̃ = 0 に統一され、J₁の符号によらず連続。
+
+### UI表現（UI層）
+
+| UI変数 | 定義 | 型 |
+|--------|------|-----|
+| T* = k_BT / \|J₁\| | 無次元温度（常に正） | セグメント型セレクター |
+| J₁_sign ∈ {+1, −1} | FM / AFM トグル | トグルスイッチ |
+| h | 外場 | スライダー |
+| J₂ | 次近接結合 | スライダー |
+
+UI → 計算層への変換:
+```
+K₁ = J₁_sign / T*
+K₂ = K₁ · (J₂ / J₁)
+h̃  = h / T*
+```
+
+### 臨界点
+
+| 量 | 2D正方格子 | 3D単純立方格子 |
+|----|-----------|---------------|
+| T*_c | 2.269 (Onsager) | ≈ 4.51 |
+| K_c | 0.4407 | 0.2217 |
+| frustration境界 | J₂/J₁ ≈ 0.5 | J₂/J₁ ≈ 0.5 |
+
+## アーキテクチャ
+
+```
+事前計算 (Python/Rust)          静的配信 (SSG/CDN)          ブラウザ
+─────────────────────────    ──────────────────────    ──────────────────
+スナップショット生成      →   /snapshots/*.bin        →   ロード
+各パラメータ点でスピン配置保存   静的ファイルとして配信         ↓
+                                                     WASM Metropolis継続
+                                                         ↓
+                                                     React UI で可視化
+```
+
+| レイヤー | 技術 |
+|---------|------|
+| 事前計算 | Python (numpy) or Rust |
+| ブラウザ計算 | Rust → WebAssembly (wasm-pack) |
+| UI | React |
+| 3D可視化 | WebGL（将来拡張時） |
+| ホスティング | SSG、CDN配信 |
+
+**純JSではなくWASMが必須**: 臨界点付近の相関時間発散を考慮すると、10〜100倍の速度差が体感に直結する。
+
+## 事前計算スナップショット
+
+### MVP構成
+
+| T* | K₁ | 物理状態 | 保存方法 |
+|----|-----|---------|---------|
+| 1 | 1.0 | 強秩序相 | bin (4KB for 32³) |
+| 10 | 0.1 | 常磁性 | bin |
+| ∞ | 0 | 完全ランダム | JS/WASM側で乱数生成（事前計算不要） |
+
+次フェーズ追加必須: T*≈4.51 (K₁=0.2217) — 臨界点。T=1からの熱化では相関時間発散により実用的でない。
+
+### スナップショット内容
+
+| データ | サイズ (32³格子) | 必須 |
+|--------|-----------------|------|
+| スピン配置 {sᵢ} | 4KB | **必須** |
+| パラメータ (K₁, K₂, h̃) | 24byte | **必須** |
+| RNG状態 | 数十byte | 再現性が要る場合 |
+| MCステップ数 | 8byte | あると便利 |
+
+```
+/snapshots/
+  T1.bin
+  T10.bin
+  Tc.bin       ← 次フェーズ
+  （T_inf は乱数生成で代替）
+```
+
+## ウォームスタート初期化
+
+各サイト独立に、複数の隣接点配置から確率的に1つを選択（逆距離重み）:
+
+```
+s_i^(init) = s_i^(α)    確率 w_α で選択
+w_α = (1/d_α) / Σ_β(1/d_β)
+d = √( ΔK₁² + ΔK₂² + Δh̃² )
+```
+
+| 方式 | 評価 |
+|------|------|
+| 線形補間（値の平均） | ✗ ±1制約破壊 |
+| 最近傍1点コピー | △ 方向によって不連続 |
+| argmax選択 | ✗ 相境界付近で離散的ジャンプ |
+| **確率的混合（逆距離重み）** | **✓ 制約保持 + 統計的連続性** |
+
+- 確率的混合後も数ステップの熱化は必要（ドメイン境界の緩和）
+- J₁符号反転時は副格子変換を適用: σ_i^(init) = (−1)^(ix+iy) · σ_i^(FM)
+- スイープ順序: 外側T（高温→低温）、内側h・J₂、蛇行（boustrophedon）スキャン推奨
+
+## 温度セレクターUI
+
+```
+[T*=1] ━━━秩序相━━━ [T*_c≈4.51] ━━━無秩序相━━━ [T*=10] ━━━高温━━━ [T*=∞]
+  ●                      ●                       ●                   ●
+スナップ点              スナップ点              スナップ点          スナップ点
+```
+
+| セグメント | 範囲 | 物理的意味 |
+|-----------|------|-----------|
+| 0 | T*=1 → T*_c | 秩序相 |
+| 1 | T*_c → T*=10 | 無秩序相（常磁性） |
+| 2 | T*=10 → T*=∞ | 高温領域 |
+
+MVP段階: T_cスナップショット未作成の場合はT_cボタンをグレーアウトし、セグメントを1本（T*=1 → T*=10）に簡略化。
 
 ## Development
 
-First, install dependencies, run the simulation to generate data, and start the development server:
-
 ```bash
-# Install dependencies
 pnpm install
-
-# Run simulation with optional lattice size parameter
-# Default is N=32 if not specified. It may take a time.
-pnpm run simulate --N=32  # N=4, 8, 16, 32, 64, 128...
-
-# Start the development server
+pnpm run simulate --N=32   # N=4, 8, 16, 32, 64, 128...
 pnpm run dev
 ```
 
-results is compressed and saved in the `/data` directory.
+Open [http://localhost:3000](http://localhost:3000)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see and interact with the simulation.
+## ロードマップ
 
-## Implementation Details
+### Phase 1 (MVP)
+- [ ] T*=1, T*=10 のスナップショット生成（3D, 32³）
+- [ ] WASM Metropolisカーネル実装
+- [ ] 基本UIでパラメータ操作 → スピン配置表示
+- [ ] ウォームスタート（1点コピー）実装
 
-The simulation:
+### Phase 2
+- [ ] T*_c ≈ 4.51 スナップショット追加
+- [ ] セグメント型温度セレクター統合
+- [ ] 確率的混合による複数隣接点初期化
+- [ ] (h, J₂) 2Dスイープの本番実装
 
-- Critical temperature $T_{c}$ is set to $1000\\mathrm{K}$ by default, which is configurable at `config.ts`
-- Uses a configurable N×N×N cubic lattice with periodic boundary conditions (default N=32)
-- Implements the Metropolis Monte Carlo algorithm for spin updates
-- Sweeps from high temperature to low temperature (exploring paramagnetic to ferromagnetic or antiferromagnetic phase transitions), from low external field to high external field (exploring field-driven ordering effects)
-- Visualizes a 2D slice of the 3D lattice
-- Updates the display every 200×N³ attempted spin flips
-- Compresses and stores results using Run-Length Encoding (RLE) for ferromagnetism or deflate compression for antiferromagnetism
-- The simulation uses positive external field values ($h > 0$), as a negative field effect can be equivalently realized by flipping all spins ($s_i \mapsto -s_i$ for all $i$) due to the $\mathbb{Z}_2$ symmetry of the Ising model
-
-## Interpreting the Results
-
-The simulation generates data for different temperature and external field values:
-
-- At high temperatures ($J/k_BT$ close to 0), spins are mostly random
-- As temperature decreases, spins begin to align, showing domains of similar orientation
-- Near the critical temperature, you'll observe large fluctuating domains and critical slowing down
-- Below the critical temperature, the system exhibits spontaneous magnetization
-- The external field ($h/k_BT$) biases the system toward alignment with the field direction
+### Phase 3
+- [ ] 4Dパラメータ空間（T, h, J₂, J₁ sign）の完全対応
+- [ ] 副格子変換によるFM↔AFM連続性
+- [ ] 物理量（磁化, エネルギー, 帯磁率, 副格子磁化）の測定・表示
+- [ ] 熱化インジケーター（自己相関時間推定）
 
 ## License
 
