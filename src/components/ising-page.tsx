@@ -1,63 +1,63 @@
 "use client";
-import React from "react";
-import zlib from "zlib";
+import React, { useRef, useState, useMemo } from "react";
 import Image from "next/image";
-import { temperatures, CRITICAL_TEMP, beta_hs } from "@/config";
-import { generateSVGDataURL, getTileSize } from "@/services/svg-lattice";
-
+import { beta_hs, CRITICAL_TEMP } from "@/config";
+import { useSimulation, SimStats } from "@/hooks/useSimulation";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
-import { SimulationResultOnDisk } from "@/types";
-import { rleDecode } from "@/services/rle";
-import { SpinLattice } from "@/services/spin-lattice";
-import { getBetaJ, getkT } from "@/services/physical_quantity";
+import { getBetaJ } from "@/services/physical_quantity";
 import PhaseSection from "./phase-section";
-import { calcMeanAndStdev } from "@/utils";
 
 export function IsingPage({
-  simulationResults: results,
+  initialSpinsBase64,
+  latticeSize,
+  initialBetaJ,
+  initialBetaH,
+  betaJMags,
 }: {
-  simulationResults: SimulationResultOnDisk[];
+  initialSpinsBase64: string;
+  latticeSize: number;
+  initialBetaJ: number;
+  initialBetaH: number;
+  betaJMags: readonly number[];
 }) {
-  const N = results[0].lattice_size;
-  const initialTemp = temperatures[Math.floor(temperatures.length / 2)];
-  const initialBetaJMag = getBetaJ(initialTemp, CRITICAL_TEMP);
+  const initialBetaJMag = Math.abs(initialBetaJ);
   const [betaJMag, setBetaJMag] = React.useState(initialBetaJMag);
-  const [jSign, setJSign] = React.useState<1 | -1>(1);
-  const [betaH, setBetaH] = React.useState<(typeof beta_hs)[number]>(0);
-  const [z, setZ] = React.useState(Math.floor(N / 2));
-  const betaJ = jSign * betaJMag;
-  const result = results.find((r) => r.beta_j === betaJ && r.beta_h === betaH);
-  if (result === undefined) {
-    throw new Error(
-      `Simulation result not found for betaJ ${betaJ}, betaH ${betaH}`
-    );
-  }
-  const latticeCompressed = Buffer.from(result.lattice, "base64");
-  const decompressSync =
-    result.compress === "deflate" ? zlib.inflateSync : rleDecode;
-  const lattice = new SpinLattice(decompressSync(latticeCompressed));
-  const svgDataUrl = generateSVGDataURL(lattice, z);
-  const tileSize = getTileSize(16, N);
+  const [jSign, setJSign] = React.useState<1 | -1>(initialBetaJ >= 0 ? 1 : -1);
+  const [betaH, setBetaH] = React.useState<(typeof beta_hs)[number]>(
+    initialBetaH as (typeof beta_hs)[number]
+  );
+  const [z, setZ] = React.useState(Math.floor(latticeSize / 2));
+  const [stats, setStats] = useState<SimStats>({
+    magnetization: 0,
+    betaEnergyPerSite: 0,
+    sweeps: 0,
+  });
 
-  const [meanBetaEnergy, stdevBetaEnergy] = calcMeanAndStdev(
-    result.beta_energies
+  const betaJ = jSign * betaJMag;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const initialSpins = useMemo(
+    () => Uint8Array.from(atob(initialSpinsBase64), (c) => c.charCodeAt(0)),
+    [initialSpinsBase64]
   );
-  const [magnetization, stdevMagnetization] = calcMeanAndStdev(
-    result.magnetizations
-  );
-  const energy = getkT(result.beta_j) * meanBetaEnergy;
-  const stdevEnergy = getkT(result.beta_j) * stdevBetaEnergy;
+
+  useSimulation({
+    canvasRef,
+    initialSpins,
+    betaJ,
+    betaH,
+    z,
+    onStats: setStats,
+  });
 
   return (
-    <div
-      className="relative h-screen w-screen bg-gray-900 text-white"
-      style={{
-        backgroundImage: `url("${svgDataUrl}")`,
-        backgroundRepeat: "repeat",
-        backgroundSize: `${tileSize}px ${tileSize}px`,
-      }}
-    >
+    <div className="relative h-screen w-screen bg-gray-900 text-white overflow-hidden">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0"
+        style={{ imageRendering: "pixelated" }}
+      />
       <div className="fixed top-4 left-4 bg-gray-800 p-2 sm:p-4 rounded-lg shadow-lg z-10 w-auto filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.25)] opacity-85">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-base sm:text-lg md:text-xl font-bold">
@@ -87,14 +87,14 @@ export function IsingPage({
           setZ={setZ}
           jSign={jSign}
           setJSign={setJSign}
-          latticeSize={N}
+          latticeSize={latticeSize}
+          betaJMags={betaJMags}
         />
         <PhaseSection betaJ={betaJ} />
         <StatisticalInfo
-          energyPerSite={energy / (result.lattice_size ^ 3)}
-          stdevEnergyPerSite={stdevEnergy / (result.lattice_size ^ 3)}
-          magnetization={magnetization}
-          stdevMagnetization={stdevMagnetization}
+          betaEnergyPerSite={stats.betaEnergyPerSite}
+          magnetization={stats.magnetization}
+          sweeps={stats.sweeps}
         />
       </div>
     </div>

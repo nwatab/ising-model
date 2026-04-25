@@ -1,11 +1,12 @@
 "use client";
 
-import { beta_hs, temperatures, CRITICAL_TEMP } from "@/config";
+import { beta_hs, CRITICAL_TEMP } from "@/config";
 import {
   getBetaJ,
   getTemperatureFromBetaJ,
 } from "@/services/physical_quantity";
 import React from "react";
+import { CRITICAL_BETA_J } from "@/constants";
 
 export default function ConfigSection({
   betaJMag,
@@ -17,6 +18,7 @@ export default function ConfigSection({
   z,
   setZ,
   latticeSize,
+  betaJMags,
 }: {
   betaJMag: number;
   setBetaJMag: React.Dispatch<React.SetStateAction<number>>;
@@ -27,8 +29,12 @@ export default function ConfigSection({
   z: number;
   setZ: React.Dispatch<React.SetStateAction<number>>;
   latticeSize: number;
+  betaJMags: readonly number[];
 }) {
-  const criticalBetaJ = getBetaJ(CRITICAL_TEMP, CRITICAL_TEMP);
+  const sorted = [...betaJMags].sort((a, b) => a - b);
+  const minBetaJ = sorted[0];
+  const maxBetaJ = sorted[sorted.length - 1];
+  const step = sorted[1] - sorted[0];
   const temperature = getTemperatureFromBetaJ(betaJMag, CRITICAL_TEMP);
 
   return (
@@ -43,9 +49,7 @@ export default function ConfigSection({
                 type="radio"
                 name="magneticType"
                 checked={jSign > 0}
-                onChange={() => {
-                  setJSign(1);
-                }}
+                onChange={() => setJSign(1)}
                 className="mr-2"
               />
               Para/Ferro
@@ -57,9 +61,7 @@ export default function ConfigSection({
                 type="radio"
                 name="magneticType"
                 checked={jSign < 0}
-                onChange={() => {
-                  setJSign(-1);
-                }}
+                onChange={() => setJSign(-1)}
                 className="mr-2"
               />
               Para/Antiferro
@@ -67,6 +69,7 @@ export default function ConfigSection({
           </div>
         </div>
       </div>
+
       <div className="mb-4 ml-2">
         <label className="block text-sm font-medium mb-1">
           Inverse temperature <span className="italic">β</span>
@@ -77,29 +80,27 @@ export default function ConfigSection({
         <input
           type="range"
           name="temperature"
-          list="temperature-ticks"
-          min={temperatures[0]}
-          max={temperatures[temperatures.length - 1]}
-          step={temperatures[1] - temperatures[0]}
-          value={temperature}
-          onChange={(e) => {
-            const temp = parseFloat(e.target.value) as (typeof temperatures)[number];
-            setBetaJMag(getBetaJ(temp, CRITICAL_TEMP));
-          }}
+          list="betaj-mag-ticks"
+          min={minBetaJ}
+          max={maxBetaJ}
+          step={step}
+          value={betaJMag}
+          onChange={(e) => setBetaJMag(parseFloat(e.target.value))}
           className="w-full"
         />
-        <datalist id="temperature-ticks">
-          {temperatures.map((temp) => (
-            <option key={temp} value={temp} />
+        <datalist id="betaj-mag-ticks">
+          {sorted.map((bj) => (
+            <option key={bj} value={bj} />
           ))}
         </datalist>
         <div className="text-xs text-gray-400 mb-4">
-          (Critical <span className="italic">β</span>
+          T* = {temperature.toFixed(0)} (Critical{" "}
+          <span className="italic">β</span>
           <sub>c</sub>
-          <span className="italic">J</span> ={" "}
-          {criticalBetaJ.toFixed(3)})
+          <span className="italic">J</span> = {CRITICAL_BETA_J.toFixed(3)})
         </div>
       </div>
+
       <div className="mb-4 ml-2">
         <label className="block text-sm font-medium mb-1">
           External field <span className="italic">β</span>
