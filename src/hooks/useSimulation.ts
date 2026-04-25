@@ -19,6 +19,7 @@ export function useSimulation({
   betaJ,
   betaH,
   z,
+  running,
   onStats,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -26,14 +27,17 @@ export function useSimulation({
   betaJ: number;
   betaH: number;
   z: number;
+  running: boolean;
   onStats: (stats: SimStats) => void;
 }) {
   const latticeRef = useRef<SpinLattice>(new SpinLattice(initialSpins));
   const paramsRef = useRef({ betaJ, betaH, z });
+  const runningRef = useRef(running);
   const onStatsRef = useRef(onStats);
   const sweepsRef = useRef(0);
 
   paramsRef.current = { betaJ, betaH, z };
+  runningRef.current = running;
   onStatsRef.current = onStats;
 
   useEffect(() => {
@@ -60,13 +64,15 @@ export function useSimulation({
     const tick = () => {
       const { betaJ, betaH, z } = paramsRef.current;
 
-      for (let i = 0; i < SWEEPS_PER_FRAME; i++) {
-        latticeRef.current = simulateMetropoliseSweepLattice(
-          latticeRef.current,
-          betaJ,
-          betaH
-        );
-        sweepsRef.current++;
+      if (runningRef.current) {
+        for (let i = 0; i < SWEEPS_PER_FRAME; i++) {
+          latticeRef.current = simulateMetropoliseSweepLattice(
+            latticeRef.current,
+            betaJ,
+            betaH
+          );
+          sweepsRef.current++;
+        }
       }
 
       const canvas = canvasRef.current;

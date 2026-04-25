@@ -1,12 +1,12 @@
 "use client";
 import React, { useRef, useState, useMemo } from "react";
 import Image from "next/image";
-import { beta_hs, CRITICAL_TEMP } from "@/config";
+import { beta_hs } from "@/config";
 import { useSimulation, SimStats } from "@/hooks/useSimulation";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
-import { getBetaJ } from "@/services/physical_quantity";
 import PhaseSection from "./phase-section";
+import { SpinLattice } from "@/services/spin-lattice";
 
 export function IsingPage({
   initialSpinsBase64,
@@ -28,11 +28,7 @@ export function IsingPage({
     initialBetaH as (typeof beta_hs)[number]
   );
   const [z, setZ] = React.useState(Math.floor(latticeSize / 2));
-  const [stats, setStats] = useState<SimStats>({
-    magnetization: 0,
-    betaEnergyPerSite: 0,
-    sweeps: 0,
-  });
+  const [running, setRunning] = useState(false);
 
   const betaJ = jSign * betaJMag;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -42,12 +38,31 @@ export function IsingPage({
     [initialSpinsBase64]
   );
 
+  const initialLattice = useMemo(
+    () => new SpinLattice(initialSpins),
+    [initialSpins]
+  );
+
+  const initialStats = useMemo<SimStats>(
+    () => ({
+      magnetization: initialLattice.magnetization(),
+      betaEnergyPerSite:
+        initialLattice.betaEnergy(initialBetaJ, initialBetaH) /
+        initialLattice.spinCount,
+      sweeps: 0,
+    }),
+    [initialLattice, initialBetaJ, initialBetaH]
+  );
+
+  const [stats, setStats] = useState<SimStats>(initialStats);
+
   useSimulation({
     canvasRef,
     initialSpins,
     betaJ,
     betaH,
     z,
+    running,
     onStats: setStats,
   });
 
@@ -91,6 +106,16 @@ export function IsingPage({
           betaJMags={betaJMags}
         />
         <PhaseSection betaJ={betaJ} />
+        <button
+          onClick={() => setRunning((r) => !r)}
+          className={`mt-3 w-full py-1.5 rounded text-sm font-semibold transition-colors ${
+            running
+              ? "bg-gray-600 hover:bg-gray-500 text-white"
+              : "bg-orange-600 hover:bg-orange-500 text-white"
+          }`}
+        >
+          {running ? "⏸ Pause" : "🔥 Heat"}
+        </button>
         <StatisticalInfo
           betaEnergyPerSite={stats.betaEnergyPerSite}
           magnetization={stats.magnetization}
