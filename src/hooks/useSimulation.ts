@@ -4,7 +4,7 @@ import { SpinLattice } from "@/services/spin-lattice";
 import { simulateMetropoliseSweepLattice } from "@/services/metropolis";
 import { renderSliceToImageData, drawTiledOnCanvas } from "@/services/canvas-lattice";
 
-const SWEEPS_PER_FRAME = 2;
+const FRAMES_PER_SWEEP = 6; // one full lattice sweep every 6 frames (~10/s at 60 fps)
 const PIXELS_PER_SPIN = 16;
 
 export type SimStats = {
@@ -35,6 +35,7 @@ export function useSimulation({
   const runningRef = useRef(running);
   const onStatsRef = useRef(onStats);
   const sweepsRef = useRef(0);
+  const frameRef = useRef(0);
 
   paramsRef.current = { betaJ, betaH, z };
   runningRef.current = running;
@@ -64,15 +65,14 @@ export function useSimulation({
     const tick = () => {
       const { betaJ, betaH, z } = paramsRef.current;
 
-      if (runningRef.current) {
-        for (let i = 0; i < SWEEPS_PER_FRAME; i++) {
-          latticeRef.current = simulateMetropoliseSweepLattice(
-            latticeRef.current,
-            betaJ,
-            betaH
-          );
-          sweepsRef.current++;
-        }
+      frameRef.current++;
+      if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
+        latticeRef.current = simulateMetropoliseSweepLattice(
+          latticeRef.current,
+          betaJ,
+          betaH
+        );
+        sweepsRef.current++;
       }
 
       const canvas = canvasRef.current;
