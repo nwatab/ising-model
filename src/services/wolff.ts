@@ -1,4 +1,4 @@
-import { CRITICAL_BETA_J } from "@/config";
+import { CRITICAL_BETA_J } from "@/constants";
 import { SpinLattice } from "./spin-lattice";
 
 /**

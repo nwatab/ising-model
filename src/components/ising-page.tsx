@@ -1,8 +1,8 @@
 "use client";
 import React, { useRef, useState, useMemo } from "react";
 import Image from "next/image";
-import { beta_hs } from "@/config";
 import { useSimulation, SimStats } from "@/hooks/useSimulation";
+import { T_STAR_CRITICAL } from "@/constants";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
 import PhaseSection from "./phase-section";
@@ -13,24 +13,25 @@ export function IsingPage({
   latticeSize,
   initialBetaJ,
   initialBetaH,
-  betaJMags,
 }: {
   initialSpinsBase64: string;
   latticeSize: number;
   initialBetaJ: number;
   initialBetaH: number;
-  betaJMags: readonly number[];
 }) {
-  const initialBetaJMag = Math.abs(initialBetaJ);
-  const [betaJMag, setBetaJMag] = React.useState(initialBetaJMag);
-  const [jSign, setJSign] = React.useState<1 | -1>(initialBetaJ >= 0 ? 1 : -1);
-  const [betaH, setBetaH] = React.useState<(typeof beta_hs)[number]>(
-    initialBetaH as (typeof beta_hs)[number]
+  // UI layer: T*, J₁_sign, h
+  const [tStar, setTStar] = useState(
+    parseFloat(T_STAR_CRITICAL.toFixed(2)) // round to slider step
   );
-  const [z, setZ] = React.useState(Math.floor(latticeSize / 2));
+  const [jSign, setJSign] = useState<1 | -1>(1);
+  const [h, setH] = useState(0);
+  const [z, setZ] = useState(Math.floor(latticeSize / 2));
   const [running, setRunning] = useState(false);
 
-  const betaJ = jSign * betaJMag;
+  // Adapter layer: UI → computation (K₁, h̃)
+  const K1 = jSign / tStar;
+  const hTilde = h / tStar;
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const initialSpins = useMemo(
@@ -59,8 +60,8 @@ export function IsingPage({
   useSimulation({
     canvasRef,
     initialSpins,
-    betaJ,
-    betaH,
+    betaJ: K1,
+    betaH: hTilde,
     z,
     running,
     onStats: setStats,
@@ -94,18 +95,17 @@ export function IsingPage({
           </a>
         </div>
         <ConfigSection
-          betaJMag={betaJMag}
-          setBetaJMag={setBetaJMag}
-          betaH={betaH}
-          setBetaH={setBetaH}
-          z={z}
-          setZ={setZ}
+          tStar={tStar}
+          setTStar={setTStar}
           jSign={jSign}
           setJSign={setJSign}
+          h={h}
+          setH={setH}
+          z={z}
+          setZ={setZ}
           latticeSize={latticeSize}
-          betaJMags={betaJMags}
         />
-        <PhaseSection betaJ={betaJ} />
+        <PhaseSection tStar={tStar} jSign={jSign} />
         <button
           onClick={() => setRunning((r) => !r)}
           className={`mt-3 w-full py-1.5 rounded text-sm font-semibold transition-colors ${

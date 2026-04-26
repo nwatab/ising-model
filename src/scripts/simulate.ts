@@ -4,13 +4,11 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import zlib from "node:zlib";
 
-import { temperatures, beta_hs, CRITICAL_TEMP } from "../config";
 import { simulateMetropolis } from "../services/metropolis";
 import { SpinLattice } from "../services/spin-lattice";
 import { rleEncode } from "../services/rle";
 import type { SimulationResultOnDisk } from "@/types";
-import { getBetaJ } from "@/services/physical_quantity";
-import { CRITICAL_BETA_J } from "@/constants";
+import { CRITICAL_BETA_J, T_STAR_CRITICAL } from "@/constants";
 
 const SWEEPS_THERMALIZATION = 200;
 const SWEEPS_MEASURE = 10;
@@ -52,7 +50,10 @@ async function main() {
   const outDir = path.resolve("data");
   fs.mkdirSync(outDir, { recursive: true });
 
-  const betaJMags = temperatures.map((t) => getBetaJ(t, CRITICAL_TEMP));
+  // Sample T* evenly around the critical point; K₁ = 1/T*
+  const tStars = [1, 2, 3, 4, T_STAR_CRITICAL, 5, 6, 7, 8, 9];
+  const betaJMags = tStars.map((t) => 1 / t);
+  const beta_hs = [0, 0.5, 1.0, 1.5] as const; // h/T* values
 
   for (const jSign of [-1, 1] as const) {
     for (const betaJMag of betaJMags) {
