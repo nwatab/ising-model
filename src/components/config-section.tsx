@@ -97,10 +97,22 @@ export default function ConfigSection({
           T<sup>*</sup>
           <span>= k<sub>B</sub>T / |J₁| =</span>
           <span className="font-mono">{isInf ? "∞" : tStar.toFixed(2)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={0}
+            max={SLIDER_STEPS}
+            step={1}
+            value={sliderValue}
+            disabled={isInf}
+            onChange={(e) => setTStar(sliderToTStar(parseInt(e.target.value)))}
+            className={`flex-1 transition-opacity ${isInf ? "opacity-30 cursor-not-allowed" : ""}`}
+          />
           <button
             type="button"
             onClick={handleInfToggle}
-            className={`ml-1 px-1.5 py-0.5 text-xs rounded border transition-colors ${
+            className={`px-1.5 py-0.5 text-xs rounded border transition-colors ${
               isInf
                 ? "bg-blue-600 border-blue-500 text-white"
                 : "border-gray-500 text-gray-400 hover:text-white hover:border-gray-300"
@@ -109,16 +121,6 @@ export default function ConfigSection({
             ∞
           </button>
         </div>
-        <input
-          type="range"
-          min={0}
-          max={SLIDER_STEPS}
-          step={1}
-          value={sliderValue}
-          disabled={isInf}
-          onChange={(e) => setTStar(sliderToTStar(parseInt(e.target.value)))}
-          className={`w-full transition-opacity ${isInf ? "opacity-30 cursor-not-allowed" : ""}`}
-        />
         {/* Clickable snap-point labels */}
         <div className={`relative h-5 mt-1 transition-opacity ${isInf ? "opacity-30" : ""}`}>
           {snapPoints.map(({ t, label }) => {
