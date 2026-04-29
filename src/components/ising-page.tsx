@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { useSimulation, SimStats } from "@/hooks/useSimulation";
 import { T_STAR_CRITICAL } from "@/constants";
@@ -7,6 +7,26 @@ import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
 import PhaseSection from "./phase-section";
 import { SpinLattice } from "@/services/spin-lattice";
+import { decodeLattice } from "@/services/decode-lattice";
+
+// Positive betaJ values available as pre-computed snapshots.
+// Negatives (AFM) are derived by sign(K1).
+const SNAPSHOT_BETAJS = [
+  0.184712, 0.192743, 0.201504, 0.211099, 0.221654,
+  0.233320, 0.246282, 0.260769, 0.277067,
+];
+
+function nearestBetaJ(k1: number): number {
+  const pool = k1 < 0 ? SNAPSHOT_BETAJS.map((b) => -b) : SNAPSHOT_BETAJS;
+  return pool.reduce((best, c) =>
+    Math.abs(c - k1) < Math.abs(best - k1) ? c : best
+  );
+}
+
+function snapshotUrl(k1: number): string {
+  const betaJ = nearestBetaJ(k1);
+  return `/snapshots/betaj_${betaJ.toFixed(6)}_betah_0.json`;
+}
 
 export function IsingPage({
   initialSpinsBase64,
@@ -20,9 +40,7 @@ export function IsingPage({
   initialBetaH: number;
 }) {
   // UI layer: T*, J₁_sign, h
-  const [tStar, setTStar] = useState(
-    parseFloat(T_STAR_CRITICAL.toFixed(2)) // round to slider step
-  );
+  const [tStar, setTStar] = useState<number>(T_STAR_CRITICAL);
   const [jSign, setJSign] = useState<1 | -1>(1);
   const [h, setH] = useState(0);
   const [z, setZ] = useState(Math.floor(latticeSize / 2));
@@ -38,6 +56,35 @@ export function IsingPage({
     () => Uint8Array.from(atob(initialSpinsBase64), (c) => c.charCodeAt(0)),
     [initialSpinsBase64]
   );
+
+  // Warm-start spins: reset to nearest pre-computed snapshot when T* changes.
+  // J₁_sign and h changes do not trigger a reset (continuity not required there).
+  const [warmSpins, setWarmSpins] = useState<Uint8Array>(initialSpins);
+  const jSignRef = useRef(jSign);
+  jSignRef.current = jSign;
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    // Skip on initial mount — the SSG snapshot is already the correct warm start.
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    if (!isFinite(tStar)) return; // T*=∞: K₁=0, any state thermalises instantly
+
+    const k1 = jSignRef.current / tStar;
+    const ctrl = new AbortController();
+
+    fetch(snapshotUrl(k1), { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((d) => decodeLattice(d))
+      .then((spins) => setWarmSpins(spins))
+      .catch((e) => {
+        if (e.name !== "AbortError") console.error("snapshot fetch failed", e);
+      });
+
+    return () => ctrl.abort();
+  }, [tStar]);
 
   const initialLattice = useMemo(
     () => new SpinLattice(initialSpins),
@@ -59,7 +106,7 @@ export function IsingPage({
 
   useSimulation({
     canvasRef,
-    initialSpins,
+    initialSpins: warmSpins,
     betaJ: K1,
     betaH: hTilde,
     z,

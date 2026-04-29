@@ -16,9 +16,9 @@ export default function Home() {
 
   const compressed = Buffer.from(result.lattice, "base64");
   const raw =
-    result.compress === "deflate"
-      ? zlib.inflateSync(compressed)
-      : rleDecode(compressed);
+    result.compress === "deflate" ? zlib.inflateSync(compressed)
+    : result.compress === "rle" ? rleDecode(compressed)
+    : compressed;
   const initialSpinsBase64 = Buffer.from(raw).toString("base64");
 
   return (

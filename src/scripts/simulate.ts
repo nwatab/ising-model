@@ -68,9 +68,14 @@ async function main() {
         );
         console.timeEnd(`betaJ=${betaJ.toFixed(6)}, betaH=${betaH}`);
 
-        const compress = Math.abs(betaJ) < CRITICAL_BETA_J ? "deflate" : "rle";
+        const compress =
+          Math.abs(betaJ) <= CRITICAL_BETA_J ? "none"
+          : betaJ > 0 ? "rle"
+          : "deflate";
         const compressSync =
-          compress === "deflate" ? zlib.deflateSync : rleEncode;
+          compress === "deflate" ? zlib.deflateSync
+          : compress === "rle" ? rleEncode
+          : (x: Uint8Array) => x;
 
         const output: SimulationResultOnDisk = {
           lattice: Buffer.from(compressSync(lattice)).toString("base64"),
