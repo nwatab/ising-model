@@ -37,8 +37,7 @@ export default function StructureFactorPanel({
   const yLabels = [0, 0.5, 1.0];
 
   return (
-    <div className="mt-4">
-      <h2 className="text-base sm:text-lg font-bold mb-1">S(k)</h2>
+    <div>
       <svg
         width={viewW}
         height={viewH}

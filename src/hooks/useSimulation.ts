@@ -48,7 +48,8 @@ export type SimStats = {
   magnetization: number;
   energyPerSite: number; // E / (N|J₁|)
   sweeps: number;
-  neelOrderParam: number; // (1/N³) Σ sᵢ(−1)^(x+y+z)
+  neelOrderParam: number;   // (1/N³) Σ sᵢ(−1)^(x+y+z)
+  stripeOrderParam: number; // max_α sqrt(S(k_α)/N³) — detects layered phase
   /** S(k)/N³ along Γ→X→M→R→Γ; null until first measurement */
   skPath: Float32Array | null;
 };
@@ -83,6 +84,7 @@ export function useSimulation({
   const skPathRef = useRef<Float32Array | null>(null);
   const skPathDefRef = useRef<{ nx: number; ny: number; nz: number }[]>([]);
   const skLastComputedSweepRef = useRef(-1);
+  const stripeRef = useRef<number>(0);
 
   paramsRef.current = { betaJ, betaJ2, betaH, tStar, z };
   runningRef.current = running;
@@ -93,6 +95,7 @@ export function useSimulation({
     sweepsRef.current = 0;
     skPathRef.current = null;
     skLastComputedSweepRef.current = -1;
+    stripeRef.current = 0;
     skPathDefRef.current = buildSkPath(latticeRef.current.latticeSize);
   }, [initialSpins]);
 
@@ -154,6 +157,7 @@ export function useSimulation({
           arr[i] = lat.structureFactorAt(nx, ny, nz) / N3;
         }
         skPathRef.current = arr;
+        stripeRef.current = lat.stripeOrderParam();
       }
 
       onStatsRef.current({
@@ -163,6 +167,7 @@ export function useSimulation({
           : 0,
         sweeps: sweepsRef.current,
         neelOrderParam: latticeRef.current.neelOrderParam(),
+        stripeOrderParam: stripeRef.current,
         skPath: skPathRef.current,
       });
 

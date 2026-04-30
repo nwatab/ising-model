@@ -29,14 +29,41 @@ function snapshotUrl(k1: number): string {
   return `/snapshots/betaj_${betaJ.toFixed(6)}_betah_0.json`;
 }
 
-function inferPhase(M: number, mNeel: number, jSign: 1 | -1): string {
-  if (Math.abs(M) > 0.15) return jSign > 0 ? "FM" : "AFM";
-  if (Math.abs(mNeel) > 0.15) return "Néel";
-  return "PM";
+function inferPhase(M: number, mNeel: number, mStripe: number, jSign: 1 | -1): string {
+  if (Math.abs(M) > 0.15) return jSign > 0 ? "Ferromagnetic" : "Antiferromagnetic";
+  if (Math.abs(mNeel) > 0.15) return "Néel Antiferromagnetic";
+  if (mStripe > 0.15) return "Striped Antiferromagnetic";
+  return "Paramagnetic";
 }
 
 const PANEL_CLS =
   "bg-gray-800 rounded-lg shadow-lg z-10 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.25)] opacity-90";
+
+function AccordionSection({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-t border-gray-700 first:border-t-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-1.5 py-1.5 text-sm font-bold text-left text-gray-100 hover:text-white"
+      >
+        <span className="text-xs leading-none">{open ? "▾" : "▸"}</span>
+        {title}
+      </button>
+      {open && <div className="pb-2">{children}</div>}
+    </div>
+  );
+}
 
 export function IsingPage({
   initialSpinsBase64,
@@ -55,7 +82,11 @@ export function IsingPage({
   const [h, setH] = useState(0);
   const [z, setZ] = useState(Math.floor(latticeSize / 2));
   const [running, setRunning] = useState(false);
-  const [resultsOpen, setResultsOpen] = useState(false);
+
+  const [paramsOpen, setParamsOpen] = useState(true);
+  const [statsOpen, setStatsOpen] = useState(true);
+  const [skOpen, setSkOpen] = useState(true);
+  const [phaseOpen, setPhaseOpen] = useState(true);
 
   const K1 = jSign / tStar;
   const K2 = K1 * j2OverJ1;
@@ -69,14 +100,18 @@ export function IsingPage({
   );
 
   const [warmSpins, setWarmSpins] = useState<Uint8Array>(initialSpins);
-  const jSignRef = useRef(jSign);
-  jSignRef.current = jSign;
   const mountedRef = useRef(false);
 
   useEffect(() => {
     if (!mountedRef.current) { mountedRef.current = true; return; }
+    // J₁ < 0: no AFM snapshots exist; seed from Néel-ordered state so the
+    // system thermalizes quickly without kinetically frozen domain walls.
+    if (jSign < 0) {
+      setWarmSpins(new Uint8Array(SpinLattice.createNeel(latticeSize)));
+      return;
+    }
     if (!isFinite(tStar)) return;
-    const k1 = jSignRef.current / tStar;
+    const k1 = jSign / tStar;
     const ctrl = new AbortController();
     fetch(snapshotUrl(k1), { signal: ctrl.signal })
       .then((r) => r.json())
@@ -84,7 +119,7 @@ export function IsingPage({
       .then((spins) => setWarmSpins(spins))
       .catch((e) => { if (e.name !== "AbortError") console.error(e); });
     return () => ctrl.abort();
-  }, [tStar]);
+  }, [tStar, jSign, latticeSize]);
 
   const initialLattice = useMemo(() => new SpinLattice(initialSpins), [initialSpins]);
   const phaseDiagramData = phaseDiagramRaw as unknown as PhaseDiagramData;
@@ -97,6 +132,7 @@ export function IsingPage({
           initialLattice.spinCount) * T_STAR_CRITICAL,
       sweeps: 0,
       neelOrderParam: initialLattice.neelOrderParam(),
+      stripeOrderParam: 0,
       skPath: null,
     }),
     [initialLattice, initialBetaJ, initialBetaH]
@@ -116,27 +152,77 @@ export function IsingPage({
     onStats: setStats,
   });
 
-  const phase = inferPhase(stats.magnetization, stats.neelOrderParam, jSign);
+  const phase = inferPhase(stats.magnetization, stats.neelOrderParam, stats.stripeOrderParam, jSign);
   const tStarForDiagram = isFinite(tStar) ? tStar : 20;
 
-  // Shared results content rendered in both mobile collapse and desktop right panel
-  const resultsContent = (
-    <>
-      <StatisticalInfo
-        energyPerSite={stats.energyPerSite}
-        magnetization={stats.magnetization}
-        neelOrderParam={stats.neelOrderParam}
-        sweeps={stats.sweeps}
-        phase={phase}
-      />
-      <StructureFactorPanel skPath={stats.skPath} latticeSize={latticeSize} />
-      <PhaseDiagramPanel
-        data={phaseDiagramData}
+  const controlsContent = (
+    <AccordionSection
+      title="Parameters"
+      open={paramsOpen}
+      onToggle={() => setParamsOpen((o) => !o)}
+    >
+      <ConfigSection
+        tStar={tStar}
+        setTStar={setTStar}
         jSign={jSign}
-        tStar={tStarForDiagram}
+        setJSign={setJSign}
         j2OverJ1={j2OverJ1}
+        setJ2OverJ1={setJ2OverJ1}
+        h={h}
+        setH={setH}
+        z={z}
+        setZ={setZ}
+        latticeSize={latticeSize}
       />
-    </>
+      <button
+        onClick={() => setRunning((r) => !r)}
+        className={`w-full py-1.5 rounded text-sm font-semibold transition-colors ${
+          running
+            ? "bg-gray-600 hover:bg-gray-500 text-white"
+            : "bg-orange-600 hover:bg-orange-500 text-white"
+        }`}
+      >
+        {running ? "⏸ Pause" : "🔥 Heat"}
+      </button>
+    </AccordionSection>
+  );
+
+  const resultsContent = (
+    <div>
+      <AccordionSection
+        title="Statistics"
+        open={statsOpen}
+        onToggle={() => setStatsOpen((o) => !o)}
+      >
+        <StatisticalInfo
+          energyPerSite={stats.energyPerSite}
+          magnetization={stats.magnetization}
+          neelOrderParam={stats.neelOrderParam}
+          stripeOrderParam={stats.stripeOrderParam}
+          sweeps={stats.sweeps}
+          phase={phase}
+        />
+      </AccordionSection>
+      <AccordionSection
+        title="S(k)"
+        open={skOpen}
+        onToggle={() => setSkOpen((o) => !o)}
+      >
+        <StructureFactorPanel skPath={stats.skPath} latticeSize={latticeSize} />
+      </AccordionSection>
+      <AccordionSection
+        title={`Phase Diagram  (J₁ ${jSign > 0 ? "> 0" : "< 0"})`}
+        open={phaseOpen}
+        onToggle={() => setPhaseOpen((o) => !o)}
+      >
+        <PhaseDiagramPanel
+          data={phaseDiagramData}
+          jSign={jSign}
+          tStar={tStarForDiagram}
+          j2OverJ1={j2OverJ1}
+        />
+      </AccordionSection>
+    </div>
   );
 
   return (
@@ -147,21 +233,11 @@ export function IsingPage({
         style={{ imageRendering: "pixelated" }}
       />
 
-      {/* ── Left / main control panel ── */}
-      <div className={`fixed top-2 left-2 right-2 md:top-4 md:left-4 md:right-auto md:w-64 p-3 md:p-4 ${PANEL_CLS}`}>
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-base md:text-lg font-bold">3D Ising Model</h1>
-          <div className="flex items-center gap-2">
-            {/* Mobile: results toggle */}
-            <button
-              className="md:hidden text-lg leading-none px-1"
-              onClick={() => setResultsOpen((o) => !o)}
-              aria-label="Toggle results"
-            >
-              {resultsOpen ? "✕" : "📊"}
-            </button>
+      {/* ── Mobile: two stacked panels on left ── */}
+      <div className="md:hidden fixed top-2 left-2 z-10 flex flex-col gap-2 w-64 max-h-[calc(100vh-1rem)] overflow-y-auto">
+        <div className={`${PANEL_CLS} p-3`}>
+          <div className="flex items-center justify-between mb-1">
+            <h1 className="text-base font-bold">3D Ising Model</h1>
             <a
               href="https://github.com/nwatab/ising-model"
               target="_blank"
@@ -170,50 +246,29 @@ export function IsingPage({
               <Image src="/github-mark-white.svg" alt="GitHub" width={20} height={20} />
             </a>
           </div>
+          {controlsContent}
         </div>
-
-        <ConfigSection
-          tStar={tStar}
-          setTStar={setTStar}
-          jSign={jSign}
-          setJSign={setJSign}
-          j2OverJ1={j2OverJ1}
-          setJ2OverJ1={setJ2OverJ1}
-          h={h}
-          setH={setH}
-          z={z}
-          setZ={setZ}
-          latticeSize={latticeSize}
-        />
-
-        {/* Heat button */}
-        <button
-          onClick={() => setRunning((r) => !r)}
-          className={`w-full py-1.5 rounded text-sm font-semibold transition-colors ${
-            running
-              ? "bg-gray-600 hover:bg-gray-500 text-white"
-              : "bg-orange-600 hover:bg-orange-500 text-white"
-          }`}
-        >
-          {running ? "⏸ Pause" : "🔥 Heat"}
-        </button>
-
-        {/* Mobile: inline key stats always visible */}
-        <div className="md:hidden flex justify-between mt-2 text-xs text-gray-300">
-          <span>M = {stats.magnetization.toFixed(3)}</span>
-          <span className="text-orange-300">{phase}</span>
-          <span>{stats.sweeps} sweeps</span>
+        <div className={`${PANEL_CLS} p-3`}>
+          {resultsContent}
         </div>
-
-        {/* Mobile: collapsible results */}
-        {resultsOpen && (
-          <div className="md:hidden mt-3 border-t border-gray-700 pt-1 max-h-[60vh] overflow-y-auto">
-            {resultsContent}
-          </div>
-        )}
       </div>
 
-      {/* ── Right panel: desktop only ── */}
+      {/* ── Desktop: left controls panel ── */}
+      <div className={`hidden md:block fixed top-4 left-4 w-64 p-4 ${PANEL_CLS} max-h-[calc(100vh-2rem)] overflow-y-auto`}>
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-base md:text-lg font-bold">3D Ising Model</h1>
+          <a
+            href="https://github.com/nwatab/ising-model"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image src="/github-mark-white.svg" alt="GitHub" width={20} height={20} />
+          </a>
+        </div>
+        {controlsContent}
+      </div>
+
+      {/* ── Desktop: right results panel ── */}
       <div className={`hidden md:block fixed top-4 right-4 w-72 p-4 ${PANEL_CLS} max-h-[calc(100vh-2rem)] overflow-y-auto`}>
         {resultsContent}
       </div>

@@ -10,13 +10,11 @@ const PAD_T = 8;
 const PAD_R = 8;
 const THRESHOLD = 0.15;
 
-function phaseColor(M: number, M_AFM: number): [number, number, number, number] {
-  const isFM = M > THRESHOLD;
-  const isAFM = M_AFM > THRESHOLD;
-  if (isFM && isAFM) return [200, 80, 200, 220];   // purple (mixed/frustrated)
-  if (isFM)           return [234, 120, 40, 220];   // orange (FM)
-  if (isAFM)          return [60, 120, 230, 220];   // blue (Néel AFM)
-  return [90, 90, 100, 180];                         // gray (PM)
+function phaseColor(M: number, M_AFM: number, M_stripe: number): [number, number, number, number] {
+  if (M > THRESHOLD)        return [234, 120, 40,  220]; // orange — FM
+  if (M_AFM > THRESHOLD)    return [60,  120, 230, 220]; // blue   — Néel AFM
+  if (M_stripe > THRESHOLD) return [200, 80,  200, 220]; // purple — Striped AFM
+  return [90, 90, 100, 180];                              // gray   — PM
 }
 
 export default function PhaseDiagramPanel({
@@ -58,7 +56,7 @@ export default function PhaseDiagramPanel({
       const ji = J2S.indexOf(e.j2OverJ1);
       const ti = TS.indexOf(e.tStar);
       if (ji < 0 || ti < 0) continue;
-      const [r, g, b, a] = phaseColor(e.M, e.M_AFM);
+      const [r, g, b, a] = phaseColor(e.M, e.M_AFM, e.M_stripe ?? 0);
       ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
       // Invert y so high T* is at top
       const x = PAD_L + ji * CELL_W;
@@ -114,8 +112,7 @@ export default function PhaseDiagramPanel({
   }, [filtered, J2S, TS, nJ, nT, canvasW, canvasH, j2OverJ1, tStar]);
 
   return (
-    <div className="mt-4">
-      <h2 className="text-base sm:text-lg font-bold mb-1">Phase Diagram</h2>
+    <div>
       {nJ === 0 ? (
         <p className="text-xs text-gray-500 ml-2">
           Run <code>pnpm run phase-diagram</code> to generate data.
@@ -127,7 +124,7 @@ export default function PhaseDiagramPanel({
             {[
               { color: "bg-orange-500", label: "FM" },
               { color: "bg-blue-500",   label: "AFM" },
-              { color: "bg-purple-500", label: "Frustrated" },
+              { color: "bg-purple-500", label: "Striped" },
               { color: "bg-gray-500",   label: "PM" },
             ].map(({ color, label }) => (
               <span key={label} className="flex items-center gap-1 text-xs text-gray-400">

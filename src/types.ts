@@ -4,6 +4,7 @@ export type PhaseDiagramEntry = {
   jSign: 1 | -1;
   M: number;
   M_AFM: number;
+  M_stripe: number;
 };
 
 export type PhaseDiagramData = {

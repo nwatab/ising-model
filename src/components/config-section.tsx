@@ -66,8 +66,7 @@ export default function ConfigSection({
   ];
 
   return (
-    <form className="text-sm mb-4 max-w-full sm:max-w-sm mx-auto">
-      <h2 className="text-base sm:text-lg font-bold mb-2">Parameters</h2>
+    <form className="text-sm mb-2 max-w-full sm:max-w-sm mx-auto">
 
       {/* J₁ sign toggle */}
       <div className="mb-4 ml-2">

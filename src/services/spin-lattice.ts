@@ -35,8 +35,37 @@ export class SpinLattice extends BitPackedArray {
 
   static createRandom(N: number): SpinLattice {
     const arr = new SpinLattice(N);
-    arr.randomize(); // randomize the spins
+    arr.randomize();
     return arr;
+  }
+
+  static createFerro(N: number): SpinLattice {
+    const lat = new SpinLattice(N);
+    for (let z = 0; z < N; z++)
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++)
+          lat.setSpin({ x, y, z }, 1);
+    return lat;
+  }
+
+  // s(x,y,z) = (−1)^(x+y+z): 3D checkerboard (Néel) state
+  static createNeel(N: number): SpinLattice {
+    const lat = new SpinLattice(N);
+    for (let z = 0; z < N; z++)
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++)
+          lat.setSpin({ x, y, z }, ((x + y + z) & 1) === 0 ? 1 : -1);
+    return lat;
+  }
+
+  // s(x,y,z) = (−1)^x: ferromagnetic planes alternating along x
+  static createLayered(N: number): SpinLattice {
+    const lat = new SpinLattice(N);
+    for (let z = 0; z < N; z++)
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++)
+          lat.setSpin({ x, y, z }, (x & 1) === 0 ? 1 : -1);
+    return lat;
   }
 
   randomize(): this {
@@ -152,6 +181,24 @@ export class SpinLattice extends BitPackedArray {
       }
     }
     return sum / this.spinCount;
+  }
+
+  /**
+   * Stripe (layered) order parameter: max over α∈{x,y,z} of
+   *   (1/N³)|Σᵢ sᵢ (−1)^{r_α}| = sqrt(S(k_α)/N³)
+   * where k_α is the X-point wavevector along axis α.
+   * Equals 1 for a perfect layered state, ≈0 for PM.
+   */
+  stripeOrderParam(): number {
+    const H = Math.floor(this.N / 2);
+    const N3 = this.spinCount;
+    return Math.sqrt(
+      Math.max(
+        this.structureFactorAt(H, 0, 0),
+        this.structureFactorAt(0, H, 0),
+        this.structureFactorAt(0, 0, H),
+      ) / N3,
+    );
   }
 
   /**
