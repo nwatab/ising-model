@@ -96,9 +96,9 @@ export function IsingPage({
   const initialStats = useMemo<SimStats>(
     () => ({
       magnetization: initialLattice.magnetization(),
-      betaEnergyPerSite:
-        initialLattice.betaEnergy(initialBetaJ, 0, initialBetaH) /
-        initialLattice.spinCount,
+      energyPerSite:
+        (initialLattice.betaEnergy(initialBetaJ, 0, initialBetaH) /
+        initialLattice.spinCount) * T_STAR_CRITICAL,
       sweeps: 0,
     }),
     [initialLattice, initialBetaJ, initialBetaH]
@@ -112,6 +112,7 @@ export function IsingPage({
     betaJ: K1,
     betaJ2: K2,
     betaH: hTilde,
+    tStar,
     z,
     running,
     onStats: setStats,
@@ -169,7 +170,7 @@ export function IsingPage({
           {running ? "⏸ Pause" : "🔥 Heat"}
         </button>
         <StatisticalInfo
-          betaEnergyPerSite={stats.betaEnergyPerSite}
+          energyPerSite={stats.energyPerSite}
           magnetization={stats.magnetization}
           sweeps={stats.sweeps}
         />

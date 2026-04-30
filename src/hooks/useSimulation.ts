@@ -9,7 +9,7 @@ const PIXELS_PER_SPIN = 16;
 
 export type SimStats = {
   magnetization: number;
-  betaEnergyPerSite: number;
+  energyPerSite: number; // E / (N|J₁|)
   sweeps: number;
 };
 
@@ -19,6 +19,7 @@ export function useSimulation({
   betaJ,
   betaJ2,
   betaH,
+  tStar,
   z,
   running,
   onStats,
@@ -28,18 +29,19 @@ export function useSimulation({
   betaJ: number;
   betaJ2: number;
   betaH: number;
+  tStar: number;
   z: number;
   running: boolean;
   onStats: (stats: SimStats) => void;
 }) {
   const latticeRef = useRef<SpinLattice>(new SpinLattice(initialSpins));
-  const paramsRef = useRef({ betaJ, betaJ2, betaH, z });
+  const paramsRef = useRef({ betaJ, betaJ2, betaH, tStar, z });
   const runningRef = useRef(running);
   const onStatsRef = useRef(onStats);
   const sweepsRef = useRef(0);
   const frameRef = useRef(0);
 
-  paramsRef.current = { betaJ, betaJ2, betaH, z };
+  paramsRef.current = { betaJ, betaJ2, betaH, tStar, z };
   runningRef.current = running;
   onStatsRef.current = onStats;
 
@@ -65,7 +67,7 @@ export function useSimulation({
     let animId: number;
 
     const tick = () => {
-      const { betaJ, betaJ2, betaH, z } = paramsRef.current;
+      const { betaJ, betaJ2, betaH, tStar, z } = paramsRef.current;
 
       frameRef.current++;
       if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
@@ -91,9 +93,9 @@ export function useSimulation({
 
       onStatsRef.current({
         magnetization: latticeRef.current.magnetization(),
-        betaEnergyPerSite:
-          latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) /
-          latticeRef.current.spinCount,
+        energyPerSite: isFinite(tStar)
+          ? (latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) / latticeRef.current.spinCount) * tStar
+          : 0,
         sweeps: sweepsRef.current,
       });
 

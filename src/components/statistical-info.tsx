@@ -1,9 +1,9 @@
 export default function StatisticalInfo({
-  betaEnergyPerSite,
+  energyPerSite,
   magnetization,
   sweeps,
 }: {
-  betaEnergyPerSite: number;
+  energyPerSite: number;
   magnetization: number;
   sweeps: number;
 }) {
@@ -12,9 +12,12 @@ export default function StatisticalInfo({
       <h2 className="text-base sm:text-lg font-bold mb-2">Statistics</h2>
       <div className="flex flex-col sm:flex-row sm:justify-between ml-2">
         <div className="font-medium mb-1 sm:mb-0">
-          <span className="italic">βE</span> per site:
+          Energy per site:
         </div>
-        <div>{betaEnergyPerSite.toFixed(4)}</div>
+        <div>
+          {energyPerSite.toFixed(4)}{" "}
+          <span className="text-gray-400 text-xs">|J<sub>1</sub>|</span>
+        </div>
       </div>
       <div className="flex flex-col sm:flex-row sm:justify-between ml-2">
         <div className="font-medium mb-1 sm:mb-0">

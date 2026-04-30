@@ -103,20 +103,45 @@ export default function ConfigSection({
           <span className="font-mono">{isInf ? "∞" : tStar.toFixed(2)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={0}
-            max={SLIDER_STEPS}
-            step={1}
-            value={sliderValue}
-            disabled={isInf}
-            onChange={(e) => setTStar(sliderToTStar(parseInt(e.target.value)))}
-            className={`flex-1 transition-opacity ${isInf ? "opacity-30 cursor-not-allowed" : ""}`}
-          />
+          <div className="flex-1 min-w-0">
+            <input
+              type="range"
+              min={0}
+              max={SLIDER_STEPS}
+              step={1}
+              value={sliderValue}
+              disabled={isInf}
+              onChange={(e) => setTStar(sliderToTStar(parseInt(e.target.value)))}
+              className={`w-full transition-opacity ${isInf ? "opacity-30 cursor-not-allowed" : ""}`}
+            />
+            {/* Clickable snap-point labels */}
+            <div className={`relative h-5 mt-1 transition-opacity ${isInf ? "opacity-30" : ""}`}>
+              {snapPoints.map(({ t, label }) => {
+                const pct = getPercent(t);
+                const active =
+                  !isInf &&
+                  Math.abs(Math.log10(tStar) - Math.log10(t)) < 0.05;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTStar(t)}
+                    disabled={isInf}
+                    className={`absolute text-xs -translate-x-1/2 transition-colors ${
+                      active ? "text-white" : "text-gray-400 hover:text-gray-200"
+                    }`}
+                    style={{ left: `${pct}%` }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <button
             type="button"
             onClick={handleInfToggle}
-            className={`px-1.5 py-0.5 text-xs rounded border transition-colors ${
+            className={`px-1.5 py-0.5 text-xs rounded border transition-colors self-start ${
               isInf
                 ? "bg-blue-600 border-blue-500 text-white"
                 : "border-gray-500 text-gray-400 hover:text-white hover:border-gray-300"
@@ -124,29 +149,6 @@ export default function ConfigSection({
           >
             ∞
           </button>
-        </div>
-        {/* Clickable snap-point labels */}
-        <div className={`relative h-5 mt-1 transition-opacity ${isInf ? "opacity-30" : ""}`}>
-          {snapPoints.map(({ t, label }) => {
-            const pct = getPercent(t);
-            const active =
-              !isInf &&
-              Math.abs(Math.log10(tStar) - Math.log10(t)) < 0.05;
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTStar(t)}
-                disabled={isInf}
-                className={`absolute text-xs -translate-x-1/2 transition-colors ${
-                  active ? "text-white" : "text-gray-400 hover:text-gray-200"
-                }`}
-                style={{ left: `${pct}%` }}
-              >
-                {label}
-              </button>
-            );
-          })}
         </div>
       </div>
 
