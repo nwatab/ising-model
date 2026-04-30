@@ -129,14 +129,14 @@ describe("SpinLattice – betaEnergy", () => {
     const lat = uniform(N, 1);
     const betaJ = 1.0;
     const expected = -betaJ * N ** 3 * 3;
-    expect(lat.betaEnergy(betaJ, 0)).toBeCloseTo(expected);
+    expect(lat.betaEnergy(betaJ, 0, 0)).toBeCloseTo(expected);
   });
 
   it("all-down lattice has the same energy as all-up (spin-flip symmetry at h=0)", () => {
     const N = 2;
     const betaJ = 0.5;
-    expect(uniform(N, -1).betaEnergy(betaJ, 0)).toBeCloseTo(
-      uniform(N, 1).betaEnergy(betaJ, 0)
+    expect(uniform(N, -1).betaEnergy(betaJ, 0, 0)).toBeCloseTo(
+      uniform(N, 1).betaEnergy(betaJ, 0, 0)
     );
   });
 
@@ -146,8 +146,8 @@ describe("SpinLattice – betaEnergy", () => {
     const lat = uniform(N, 1);
     const betaJ = 0.3;
     const betaH = 0.5;
-    const eNoField = lat.betaEnergy(betaJ, 0);
-    const eWithField = lat.betaEnergy(betaJ, betaH);
+    const eNoField = lat.betaEnergy(betaJ, 0, 0);
+    const eWithField = lat.betaEnergy(betaJ, 0, betaH);
     expect(eWithField - eNoField).toBeCloseTo(-betaH * N ** 3);
   });
 
@@ -159,18 +159,18 @@ describe("SpinLattice – betaEnergy", () => {
     const lat = uniform(N, 1);
     const coord = { x: 0, y: 0, z: 0 };
 
-    const eBefore = lat.betaEnergy(betaJ, betaH);
-    const localBefore = lat.energyAt(coord, betaJ, betaH);
+    const eBefore = lat.betaEnergy(betaJ, 0, betaH);
+    const localBefore = lat.energyAt(coord, betaJ, 0, betaH);
     lat.flipSpin(coord);
-    const localAfter = lat.energyAt(coord, betaJ, betaH);
-    const eAfter = lat.betaEnergy(betaJ, betaH);
+    const localAfter = lat.energyAt(coord, betaJ, 0, betaH);
+    const eAfter = lat.betaEnergy(betaJ, 0, betaH);
 
     // delta from energyAt should match delta from full betaEnergy
     expect(localAfter - localBefore).toBeCloseTo(eAfter - eBefore, 10);
   });
 
   it("betaJ = 0 and betaH = 0 gives zero energy regardless of spin config", () => {
-    expect(uniform(4, 1).betaEnergy(0, 0)).toBeCloseTo(0);
-    expect(uniform(4, -1).betaEnergy(0, 0)).toBeCloseTo(0);
+    expect(uniform(4, 1).betaEnergy(0, 0, 0)).toBeCloseTo(0);
+    expect(uniform(4, -1).betaEnergy(0, 0, 0)).toBeCloseTo(0);
   });
 });

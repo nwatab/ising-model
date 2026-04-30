@@ -105,62 +105,89 @@ export class SpinLattice extends BitPackedArray {
   /** in class SpinArray */
   /**
    * Local energy of the spin at `coord`:
-   *   –J sᵢ ∑⟨i,j⟩ sⱼ  − H sᵢ
+   *   –K₁ sᵢ ∑⟨ij⟩ sⱼ − K₂ sᵢ ∑⟪ij⟫ sⱼ − h̃ sᵢ
    */
-  energyAt({ x, y, z }: Coord3D, betaJ: number, betaH: number): number {
+  energyAt({ x, y, z }: Coord3D, betaJ: number, betaJ2: number, betaH: number): number {
     const s = this.getSpin({ x, y, z });
 
-    // sum over the six neighbours with periodic wrapping
-    const sxp = this.getSpin({ x: x + 1, y, z });
-    const sxm = this.getSpin({ x: x - 1, y, z });
-    const syp = this.getSpin({ x, y: y + 1, z });
-    const sym = this.getSpin({ x, y: y - 1, z });
-    const szp = this.getSpin({ x, y, z: z + 1 });
-    const szm = this.getSpin({ x, y, z: z - 1 });
+    // nearest-neighbour sum (6 neighbours)
+    const nnSum =
+      this.getSpin({ x: x + 1, y, z }) +
+      this.getSpin({ x: x - 1, y, z }) +
+      this.getSpin({ x, y: y + 1, z }) +
+      this.getSpin({ x, y: y - 1, z }) +
+      this.getSpin({ x, y, z: z + 1 }) +
+      this.getSpin({ x, y, z: z - 1 });
 
-    const neighbourSum = sxp + sxm + syp + sym + szp + szm;
+    // next-nearest-neighbour sum (12 face-diagonal neighbours)
+    const nnnSum =
+      this.getSpin({ x: x + 1, y: y + 1, z }) +
+      this.getSpin({ x: x + 1, y: y - 1, z }) +
+      this.getSpin({ x: x - 1, y: y + 1, z }) +
+      this.getSpin({ x: x - 1, y: y - 1, z }) +
+      this.getSpin({ x: x + 1, y, z: z + 1 }) +
+      this.getSpin({ x: x + 1, y, z: z - 1 }) +
+      this.getSpin({ x: x - 1, y, z: z + 1 }) +
+      this.getSpin({ x: x - 1, y, z: z - 1 }) +
+      this.getSpin({ x, y: y + 1, z: z + 1 }) +
+      this.getSpin({ x, y: y + 1, z: z - 1 }) +
+      this.getSpin({ x, y: y - 1, z: z + 1 }) +
+      this.getSpin({ x, y: y - 1, z: z - 1 });
 
-    // interaction energy plus field energy
-    return -betaJ * s * neighbourSum - betaH * s;
+    return -betaJ * s * nnSum - betaJ2 * s * nnnSum - betaH * s;
   }
 
-  betaEnergy(betaJ: number, betaH: number): number {
+  betaEnergy(betaJ: number, betaJ2: number, betaH: number): number {
     const N = this.N;
     const N2 = N * N;
-    let E_int = 0;
+    let E_nn = 0;
+    let E_nnn = 0;
     let idx = 0;
 
-    // 1) loop once over every spin, track linear idx
     for (let z = 0; z < N; z++) {
       for (let y = 0; y < N; y++) {
         for (let x = 0; x < N; x++, idx++) {
-          // inline getSpin:
-          const byte = idx >> 3; // loor(idx/8)
-          const offset = idx & 0b111; // mod 8
-          const s = (this[byte] >> offset) & 1 ? 1 : -1;
+          const s = (this[idx >> 3] >> (idx & 7)) & 1 ? 1 : -1;
 
-          // +x neighbour (wrapped)
+          // nearest-neighbour pairs in +x, +y, +z directions
           const idxX = x < N - 1 ? idx + 1 : idx - (N - 1);
-          const sx = (this[idxX >> 3] >> (idxX & 7)) & 1 ? 1 : -1;
-
-          // +y neighbour (wrapped)
           const idxY = y < N - 1 ? idx + N : idx - N * (N - 1);
-          const sy = (this[idxY >> 3] >> (idxY & 7)) & 1 ? 1 : -1;
-
-          // +z neighbour (wrapped)
           const idxZ = z < N - 1 ? idx + N2 : idx - N2 * (N - 1);
-          const sz = (this[idxZ >> 3] >> (idxZ & 7)) & 1 ? 1 : -1;
+          E_nn -= betaJ * s * (
+            ((this[idxX >> 3] >> (idxX & 7)) & 1 ? 1 : -1) +
+            ((this[idxY >> 3] >> (idxY & 7)) & 1 ? 1 : -1) +
+            ((this[idxZ >> 3] >> (idxZ & 7)) & 1 ? 1 : -1)
+          );
 
-          // accumulate internal energy
-          E_int -= betaJ * (s * sx + s * sy + s * sz);
+          // next-nearest-neighbour pairs: 6 face-diagonal directions
+          // (+x+y,0), (+x-y,0), (+x,0,+z), (+x,0,-z), (0,+y+z), (0,+y-z)
+          const xp = x < N - 1 ? x + 1 : 0;
+          const xm = x > 0 ? x - 1 : N - 1;
+          const yp = y < N - 1 ? y + 1 : 0;
+          const ym = y > 0 ? y - 1 : N - 1;
+          const zp = z < N - 1 ? z + 1 : 0;
+          const zm = z > 0 ? z - 1 : N - 1;
+
+          const i_xpyp = xp + N * yp + N2 * z;
+          const i_xpym = xp + N * ym + N2 * z;
+          const i_xpzp = xp + N * y  + N2 * zp;
+          const i_xpzm = xp + N * y  + N2 * zm;
+          const i_ypzp = x  + N * yp + N2 * zp;
+          const i_ypzm = x  + N * yp + N2 * zm;
+
+          E_nnn -= betaJ2 * s * (
+            ((this[i_xpyp >> 3] >> (i_xpyp & 7)) & 1 ? 1 : -1) +
+            ((this[i_xpym >> 3] >> (i_xpym & 7)) & 1 ? 1 : -1) +
+            ((this[i_xpzp >> 3] >> (i_xpzp & 7)) & 1 ? 1 : -1) +
+            ((this[i_xpzm >> 3] >> (i_xpzm & 7)) & 1 ? 1 : -1) +
+            ((this[i_ypzp >> 3] >> (i_ypzp & 7)) & 1 ? 1 : -1) +
+            ((this[i_ypzm >> 3] >> (i_ypzm & 7)) & 1 ? 1 : -1)
+          );
         }
       }
     }
 
-    // 2) uniform field term: -βH ∑ᵢ sᵢ
-    const sum = this.sumSpins(); // net ∑ s_i over all N³ spins
-    const E_field = -betaH * sum;
-
-    return E_int + E_field;
+    const E_field = -betaH * this.sumSpins();
+    return E_nn + E_nnn + E_field;
   }
 }

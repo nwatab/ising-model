@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { T_STAR_LOG_MIN, T_STAR_LOG_MAX, H_MIN, H_MAX, H_STEP } from "@/config";
+import { T_STAR_LOG_MIN, T_STAR_LOG_MAX, H_MIN, H_MAX, H_STEP, J2_MIN, J2_MAX, J2_STEP } from "@/config";
 import { T_STAR_CRITICAL } from "@/constants";
 
 const LOG_MIN = Math.log10(T_STAR_LOG_MIN);
@@ -22,6 +22,8 @@ export default function ConfigSection({
   setTStar,
   jSign,
   setJSign,
+  j2OverJ1,
+  setJ2OverJ1,
   h,
   setH,
   z,
@@ -32,6 +34,8 @@ export default function ConfigSection({
   setTStar: (v: number) => void;
   jSign: 1 | -1;
   setJSign: (v: 1 | -1) => void;
+  j2OverJ1: number;
+  setJ2OverJ1: (v: number) => void;
   h: number;
   setH: (v: number) => void;
   z: number;
@@ -160,6 +164,24 @@ export default function ConfigSection({
           step={H_STEP}
           value={h}
           onChange={(e) => setH(parseFloat(e.target.value))}
+          className="w-full"
+        />
+      </div>
+
+      {/* J₂ slider */}
+      <div className="mb-4 ml-2">
+        <label className="block text-sm font-medium mb-1">
+          J<sub>2</sub> / |J<sub>1</sub>|
+          <span className="mx-1">=</span>
+          {j2OverJ1.toFixed(2)}
+        </label>
+        <input
+          type="range"
+          min={J2_MIN}
+          max={J2_MAX}
+          step={J2_STEP}
+          value={j2OverJ1}
+          onChange={(e) => setJ2OverJ1(parseFloat(e.target.value))}
           className="w-full"
         />
       </div>

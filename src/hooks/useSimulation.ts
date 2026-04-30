@@ -17,6 +17,7 @@ export function useSimulation({
   canvasRef,
   initialSpins,
   betaJ,
+  betaJ2,
   betaH,
   z,
   running,
@@ -25,19 +26,20 @@ export function useSimulation({
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   initialSpins: Uint8Array;
   betaJ: number;
+  betaJ2: number;
   betaH: number;
   z: number;
   running: boolean;
   onStats: (stats: SimStats) => void;
 }) {
   const latticeRef = useRef<SpinLattice>(new SpinLattice(initialSpins));
-  const paramsRef = useRef({ betaJ, betaH, z });
+  const paramsRef = useRef({ betaJ, betaJ2, betaH, z });
   const runningRef = useRef(running);
   const onStatsRef = useRef(onStats);
   const sweepsRef = useRef(0);
   const frameRef = useRef(0);
 
-  paramsRef.current = { betaJ, betaH, z };
+  paramsRef.current = { betaJ, betaJ2, betaH, z };
   runningRef.current = running;
   onStatsRef.current = onStats;
 
@@ -63,13 +65,14 @@ export function useSimulation({
     let animId: number;
 
     const tick = () => {
-      const { betaJ, betaH, z } = paramsRef.current;
+      const { betaJ, betaJ2, betaH, z } = paramsRef.current;
 
       frameRef.current++;
       if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
         latticeRef.current = simulateMetropoliseSweepLattice(
           latticeRef.current,
           betaJ,
+          betaJ2,
           betaH
         );
         sweepsRef.current++;
@@ -89,7 +92,7 @@ export function useSimulation({
       onStatsRef.current({
         magnetization: latticeRef.current.magnetization(),
         betaEnergyPerSite:
-          latticeRef.current.betaEnergy(betaJ, betaH) /
+          latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) /
           latticeRef.current.spinCount,
         sweeps: sweepsRef.current,
       });

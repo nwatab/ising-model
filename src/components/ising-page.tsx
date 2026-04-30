@@ -39,15 +39,17 @@ export function IsingPage({
   initialBetaJ: number;
   initialBetaH: number;
 }) {
-  // UI layer: T*, J₁_sign, h
+  // UI layer: T*, J₁_sign, J₂/J₁, h
   const [tStar, setTStar] = useState<number>(T_STAR_CRITICAL);
   const [jSign, setJSign] = useState<1 | -1>(1);
+  const [j2OverJ1, setJ2OverJ1] = useState(0);
   const [h, setH] = useState(0);
   const [z, setZ] = useState(Math.floor(latticeSize / 2));
   const [running, setRunning] = useState(false);
 
-  // Adapter layer: UI → computation (K₁, h̃)
+  // Adapter layer: UI → computation (K₁, K₂, h̃)
   const K1 = jSign / tStar;
+  const K2 = K1 * j2OverJ1;
   const hTilde = h / tStar;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -95,7 +97,7 @@ export function IsingPage({
     () => ({
       magnetization: initialLattice.magnetization(),
       betaEnergyPerSite:
-        initialLattice.betaEnergy(initialBetaJ, initialBetaH) /
+        initialLattice.betaEnergy(initialBetaJ, 0, initialBetaH) /
         initialLattice.spinCount,
       sweeps: 0,
     }),
@@ -108,6 +110,7 @@ export function IsingPage({
     canvasRef,
     initialSpins: warmSpins,
     betaJ: K1,
+    betaJ2: K2,
     betaH: hTilde,
     z,
     running,
@@ -146,6 +149,8 @@ export function IsingPage({
           setTStar={setTStar}
           jSign={jSign}
           setJSign={setJSign}
+          j2OverJ1={j2OverJ1}
+          setJ2OverJ1={setJ2OverJ1}
           h={h}
           setH={setH}
           z={z}

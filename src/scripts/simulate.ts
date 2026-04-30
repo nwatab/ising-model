@@ -22,16 +22,17 @@ function thermalizeAndMeasure(
   const lattice = simulateMetropolis(
     SpinLattice.createRandom(N),
     betaJ,
+    0,
     betaH,
     SWEEPS_THERMALIZATION
   );
 
-  const betaEnergies: number[] = [lattice.betaEnergy(betaJ, betaH)];
+  const betaEnergies: number[] = [lattice.betaEnergy(betaJ, 0, betaH)];
   const magnetizations: number[] = [lattice.magnetization()];
   let current = lattice;
   for (let i = 1; i < SWEEPS_MEASURE; i++) {
-    current = simulateMetropolis(current, betaJ, betaH, SWEEPS_MEASURE_INTERVAL);
-    betaEnergies.push(current.betaEnergy(betaJ, betaH));
+    current = simulateMetropolis(current, betaJ, 0, betaH, SWEEPS_MEASURE_INTERVAL);
+    betaEnergies.push(current.betaEnergy(betaJ, 0, betaH));
     magnetizations.push(current.magnetization());
   }
 
