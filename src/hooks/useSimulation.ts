@@ -48,6 +48,7 @@ export type SimStats = {
   magnetization: number;
   energyPerSite: number; // E / (N|J₁|)
   sweeps: number;
+  neelOrderParam: number; // (1/N³) Σ sᵢ(−1)^(x+y+z)
   /** S(k)/N³ along Γ→X→M→R→Γ; null until first measurement */
   skPath: Float32Array | null;
 };
@@ -161,6 +162,7 @@ export function useSimulation({
           ? (latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) / latticeRef.current.spinCount) * tStar
           : 0,
         sweeps: sweepsRef.current,
+        neelOrderParam: latticeRef.current.neelOrderParam(),
         skPath: skPathRef.current,
       });
 

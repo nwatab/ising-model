@@ -1,33 +1,41 @@
 export default function StatisticalInfo({
   energyPerSite,
   magnetization,
+  neelOrderParam,
   sweeps,
+  phase,
 }: {
   energyPerSite: number;
   magnetization: number;
+  neelOrderParam: number;
   sweeps: number;
+  phase: string;
 }) {
   return (
     <div className="text-sm mt-4 space-y-1">
       <h2 className="text-base sm:text-lg font-bold mb-2">Statistics</h2>
-      <div className="flex flex-col sm:flex-row sm:justify-between ml-2">
-        <div className="font-medium mb-1 sm:mb-0">
-          Energy per site:
-        </div>
-        <div>
+      <div className="flex justify-between ml-2">
+        <span className="font-medium">Phase:</span>
+        <span className="text-orange-300">{phase}</span>
+      </div>
+      <div className="flex justify-between ml-2">
+        <span className="font-medium">Energy per site:</span>
+        <span>
           {energyPerSite.toFixed(4)}{" "}
           <span className="text-gray-400 text-xs">|J<sub>1</sub>|</span>
-        </div>
+        </span>
       </div>
-      <div className="flex flex-col sm:flex-row sm:justify-between ml-2">
-        <div className="font-medium mb-1 sm:mb-0">
-          Magnetization:
-        </div>
-        <div>{magnetization.toFixed(4)}</div>
+      <div className="flex justify-between ml-2">
+        <span className="font-medium">M:</span>
+        <span>{magnetization.toFixed(4)}</span>
       </div>
-      <div className="flex flex-col sm:flex-row sm:justify-between ml-2">
-        <div className="font-medium mb-1 sm:mb-0">Sweeps:</div>
-        <div>{sweeps}</div>
+      <div className="flex justify-between ml-2">
+        <span className="font-medium">M<sub>AFM</sub>:</span>
+        <span>{(neelOrderParam ?? 0).toFixed(4)}</span>
+      </div>
+      <div className="flex justify-between ml-2">
+        <span className="font-medium">Sweeps:</span>
+        <span>{sweeps}</span>
       </div>
     </div>
   );
