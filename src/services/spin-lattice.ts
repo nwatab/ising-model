@@ -137,6 +137,60 @@ export class SpinLattice extends BitPackedArray {
     return -betaJ * s * nnSum - betaJ2 * s * nnnSum - betaH * s;
   }
 
+  /** M_AFM = (1/N³) Σᵢ sᵢ (−1)^(xᵢ+yᵢ+zᵢ)  ∈ [−1, 1] */
+  neelOrderParam(): number {
+    const N = this.N;
+    let sum = 0;
+    let idx = 0;
+    for (let z = 0; z < N; z++) {
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++, idx++) {
+          const spin = (this[idx >> 3] >> (idx & 7)) & 1 ? 1 : -1;
+          const sign = ((x + y + z) & 1) === 0 ? 1 : -1;
+          sum += sign * spin;
+        }
+      }
+    }
+    return sum / this.spinCount;
+  }
+
+  /**
+   * S(k) = (1/N³) |Σᵢ sᵢ exp(i k·rᵢ)|²  at k = (2π/N)(nx, ny, nz)
+   *
+   * Uses a precomputed LUT so trig is paid only once per instance.
+   */
+  structureFactorAt(nx: number, ny: number, nz: number): number {
+    const N = this.N;
+    const cosLUT = this._cosLUT ?? (this._cosLUT = this._buildLUT(true));
+    const sinLUT = this._sinLUT ?? (this._sinLUT = this._buildLUT(false));
+    let re = 0, im = 0;
+    let idx = 0;
+    for (let z = 0; z < N; z++) {
+      const nzz = (nz * z) % N;
+      for (let y = 0; y < N; y++) {
+        const nyyNzz = (ny * y + nzz) % N;
+        for (let x = 0; x < N; x++, idx++) {
+          const spin = (this[idx >> 3] >> (idx & 7)) & 1 ? 1 : -1;
+          const k = (nx * x + nyyNzz) % N;
+          re += spin * cosLUT[k];
+          im += spin * sinLUT[k];
+        }
+      }
+    }
+    return (re * re + im * im) / this.spinCount;
+  }
+
+  private _cosLUT?: Float32Array;
+  private _sinLUT?: Float32Array;
+  private _buildLUT(cosine: boolean): Float32Array {
+    const N = this.N;
+    const lut = new Float32Array(N);
+    const fn = cosine ? Math.cos : Math.sin;
+    const f = (2 * Math.PI) / N;
+    for (let k = 0; k < N; k++) lut[k] = fn(k * f);
+    return lut;
+  }
+
   betaEnergy(betaJ: number, betaJ2: number, betaH: number): number {
     const N = this.N;
     const N2 = N * N;

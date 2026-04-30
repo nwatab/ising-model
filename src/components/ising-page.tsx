@@ -6,8 +6,12 @@ import { T_STAR_CRITICAL } from "@/constants";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
 import PhaseSection from "./phase-section";
+import StructureFactorPanel from "./structure-factor-panel";
+import PhaseDiagramPanel from "./phase-diagram-panel";
 import { SpinLattice } from "@/services/spin-lattice";
 import { decodeLattice } from "@/services/decode-lattice";
+import type { PhaseDiagramData } from "@/types";
+import phaseDiagramRaw from "@/data/phase-diagram.json";
 
 // Positive betaJ values available as pre-computed snapshots.
 // Negatives (AFM) are derived by sign(K1).
@@ -93,6 +97,8 @@ export function IsingPage({
     [initialSpins]
   );
 
+  const phaseDiagramData = phaseDiagramRaw as unknown as PhaseDiagramData;
+
   const initialStats = useMemo<SimStats>(
     () => ({
       magnetization: initialLattice.magnetization(),
@@ -100,6 +106,7 @@ export function IsingPage({
         (initialLattice.betaEnergy(initialBetaJ, 0, initialBetaH) /
         initialLattice.spinCount) * T_STAR_CRITICAL,
       sweeps: 0,
+      skPath: null,
     }),
     [initialLattice, initialBetaJ, initialBetaH]
   );
@@ -173,6 +180,16 @@ export function IsingPage({
           energyPerSite={stats.energyPerSite}
           magnetization={stats.magnetization}
           sweeps={stats.sweeps}
+        />
+        <StructureFactorPanel
+          skPath={stats.skPath}
+          latticeSize={latticeSize}
+        />
+        <PhaseDiagramPanel
+          data={phaseDiagramData}
+          jSign={jSign}
+          tStar={isFinite(tStar) ? tStar : 20}
+          j2OverJ1={j2OverJ1}
         />
       </div>
     </div>

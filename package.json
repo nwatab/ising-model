@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "simulate": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/simulate.ts",
+    "phase-diagram": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/simulate-phase-diagram.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -21,7 +21,7 @@ export default function StatisticalInfo({
       </div>
       <div className="flex flex-col sm:flex-row sm:justify-between ml-2">
         <div className="font-medium mb-1 sm:mb-0">
-          Magnetization (<span className="italic">M</span>):
+          Magnetization:
         </div>
         <div>{magnetization.toFixed(4)}</div>
       </div>
