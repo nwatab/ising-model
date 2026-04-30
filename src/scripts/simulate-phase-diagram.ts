@@ -21,14 +21,11 @@ const T_STAR_VALUES = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.51, 5.0, 5.5, 6.0, 7
 
 import type { PhaseDiagramData, PhaseDiagramEntry } from "@/types";
 
-// Seed from the expected ordered state for the given parameters.
-// This dramatically speeds up thermalization, especially at low T*.
-// Above Tc the seeded order decays naturally during thermalization.
 function makeInitialLattice(N: number, jSign: 1 | -1, j2OverJ1: number): SpinLattice {
-  // jSign=+1: FM for j2OverJ1 > -0.25, Striped for j2OverJ1 < -0.25
-  // jSign=-1: Néel for j2OverJ1 < +0.50, Striped for j2OverJ1 > +0.50
+  // jSign=+1: FM for j2OverJ1 > -0.25, Striped (-1)^x for j2OverJ1 < -0.25
+  // jSign=-1: Néel for j2OverJ1 < +0.50, diagonal Stripe (-1)^(y+z) for j2OverJ1 > +0.50
   if (jSign > 0 && j2OverJ1 < -0.25) return SpinLattice.createLayered(N);
-  if (jSign < 0 && j2OverJ1 > 0.5)   return SpinLattice.createLayered(N);
+  if (jSign < 0 && j2OverJ1 > 0.25)  return SpinLattice.createDiagonalLayered(N);
   if (jSign < 0)                       return SpinLattice.createNeel(N);
   return SpinLattice.createFerro(N);
 }

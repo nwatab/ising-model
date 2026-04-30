@@ -68,6 +68,16 @@ export class SpinLattice extends BitPackedArray {
     return lat;
   }
 
+  // s(x,y,z) = (−1)^(y+z): diagonal stripe — ground state of frustrated J1<0 regime
+  static createDiagonalLayered(N: number): SpinLattice {
+    const lat = new SpinLattice(N);
+    for (let z = 0; z < N; z++)
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++)
+          lat.setSpin({ x, y, z }, ((y + z) & 1) === 0 ? 1 : -1);
+    return lat;
+  }
+
   randomize(): this {
     const total = this.spinCount;
     for (let i = 0; i < total; i++) {
@@ -192,11 +202,15 @@ export class SpinLattice extends BitPackedArray {
   stripeOrderParam(): number {
     const H = Math.floor(this.N / 2);
     const N3 = this.spinCount;
+    // Checks both single-axis (π,0,0) for J1>0 and diagonal (0,π,π) for J1<0
     return Math.sqrt(
       Math.max(
         this.structureFactorAt(H, 0, 0),
         this.structureFactorAt(0, H, 0),
         this.structureFactorAt(0, 0, H),
+        this.structureFactorAt(0, H, H),
+        this.structureFactorAt(H, 0, H),
+        this.structureFactorAt(H, H, 0),
       ) / N3,
     );
   }

@@ -122,11 +122,12 @@ export default function PhaseDiagramPanel({
           <canvas ref={canvasRef} className="block" />
           <div className="flex gap-3 mt-1 ml-1 flex-wrap">
             {[
-              { color: "bg-orange-500", label: "FM" },
-              { color: "bg-blue-500",   label: "AFM" },
+              { color: "bg-orange-500", label: "FM",  hideWhen: -1 as 1 | -1 },
+              { color: "bg-blue-500",   label: "AFM", hideWhen:  1 as 1 | -1 },
               { color: "bg-purple-500", label: "Striped" },
               { color: "bg-gray-500",   label: "PM" },
-            ].map(({ color, label }) => (
+            ].filter(({ hideWhen }) => hideWhen === undefined || hideWhen !== jSign)
+            .map(({ color, label }) => (
               <span key={label} className="flex items-center gap-1 text-xs text-gray-400">
                 <span className={`inline-block w-2.5 h-2.5 rounded-sm ${color}`} />
                 {label}
