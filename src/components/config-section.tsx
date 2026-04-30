@@ -96,10 +96,16 @@ export default function ConfigSection({
 
       {/* T* log-scale slider */}
       <div className="mb-6 ml-2">
-        <div className="block text-sm font-medium mb-1 flex items-center gap-1">
-          T<sup>*</sup>
-          <span>= k<sub>B</sub>T / |J₁| =</span>
-          <span className="font-mono">{isInf ? "∞" : tStar.toFixed(2)}</span>
+        <div className="text-xs text-gray-400 mb-0.5">Reduced temperature</div>
+        <div className="flex items-center gap-1 text-sm font-medium mb-1">
+          <span className="relative group cursor-help">
+            T<sup>*</sup>
+            <span className="ml-0.5 text-blue-400 text-xs align-middle">ⓘ</span>
+            <span className="pointer-events-none absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1 rounded whitespace-nowrap z-50 font-normal">
+              k<sub>B</sub>T / |J<sub>1</sub>| — reduced temperature; T*<sub>c</sub> ≈ 4.51
+            </span>
+          </span>
+          <span>= <span className="font-mono">{isInf ? "∞" : tStar.toFixed(2)}</span></span>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex-1 min-w-0">
@@ -153,10 +159,9 @@ export default function ConfigSection({
 
       {/* h slider */}
       <div className="mb-4 ml-2">
+        <div className="text-xs text-gray-400 mb-0.5">External field</div>
         <label className="block text-sm font-medium mb-1">
-          External field h / |J₁|
-          <span className="mx-1">=</span>
-          {h.toFixed(2)}
+          h / |J₁| = <span className="font-mono">{h.toFixed(2)}</span>
         </label>
         <input
           type="range"
@@ -171,10 +176,9 @@ export default function ConfigSection({
 
       {/* J₂ slider */}
       <div className="mb-4 ml-2">
+        <div className="text-xs text-gray-400 mb-0.5">Next-nearest coupling</div>
         <label className="block text-sm font-medium mb-1">
-          J<sub>2</sub> / |J<sub>1</sub>|
-          <span className="mx-1">=</span>
-          {j2OverJ1.toFixed(2)}
+          J<sub>2</sub> / |J<sub>1</sub>| = <span className="font-mono">{j2OverJ1.toFixed(2)}</span>
         </label>
         <input
           type="range"
@@ -189,8 +193,9 @@ export default function ConfigSection({
 
       {/* z-slice slider */}
       <div className="mb-4 ml-2">
+        <div className="text-xs text-gray-400 mb-0.5">Display layer</div>
         <label className="block text-sm font-medium mb-1">
-          Slice z<span className="mx-1">=</span>{z}
+          z = <span className="font-mono">{z}</span>
         </label>
         <input
           type="range"

@@ -41,11 +41,13 @@ const PANEL_CLS =
 
 function AccordionSection({
   title,
+  tip,
   open,
   onToggle,
   children,
 }: {
-  title: string;
+  title: React.ReactNode;
+  tip?: React.ReactNode;
   open: boolean;
   onToggle: () => void;
   children: React.ReactNode;
@@ -58,7 +60,15 @@ function AccordionSection({
         className="w-full flex items-center gap-1.5 py-1.5 text-sm font-bold text-left text-gray-100 hover:text-white"
       >
         <span className="text-xs leading-none">{open ? "▾" : "▸"}</span>
-        {title}
+        {tip ? (
+          <span className="relative group cursor-help">
+            {title}
+            <span className="ml-0.5 text-blue-400 text-xs align-middle">ⓘ</span>
+            <span className="pointer-events-none absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1 rounded whitespace-nowrap z-50 font-normal">
+              {tip}
+            </span>
+          </span>
+        ) : title}
       </button>
       {open && <div className="pb-2">{children}</div>}
     </div>
@@ -205,6 +215,7 @@ export function IsingPage({
       </AccordionSection>
       <AccordionSection
         title="S(k)"
+        tip={<>S(k) = (1/N<sup>3</sup>)|Σ s<sub>i</sub> e<sup>ik·r<sub>i</sub></sup>|<sup>2</sup> along Γ→X→M→R→Γ</>}
         open={skOpen}
         onToggle={() => setSkOpen((o) => !o)}
       >

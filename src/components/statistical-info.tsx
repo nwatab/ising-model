@@ -57,7 +57,7 @@ export default function StatisticalInfo({
       </Tip>
       <Tip
         label={<>M<sub>stripe</sub>:</>}
-        tip={<>√(max<sub>k</sub> S(k) / N<sup>6</sup>),{"  "}S(k) = |Σ s<sub>i</sub> e<sup>ik·r<sub>i</sub></sup>|<sup>2</sup>,{"  "}k ∈ X-point</>}
+        tip={<>√(max<sub>k</sub> S(k) / N<sup>6</sup>),{"  "}k ∈ X-point</>}
       >
         <span>{(stripeOrderParam ?? 0).toFixed(4)}</span>
       </Tip>
