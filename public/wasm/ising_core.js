@@ -83,18 +83,6 @@ export class SpinLattice {
     randomize() {
         wasm.spinlattice_randomize(this.__wbg_ptr);
     }
-    set_diagonal_layered() {
-        wasm.spinlattice_set_diagonal_layered(this.__wbg_ptr);
-    }
-    set_ferro() {
-        wasm.spinlattice_set_ferro(this.__wbg_ptr);
-    }
-    set_layered() {
-        wasm.spinlattice_set_layered(this.__wbg_ptr);
-    }
-    set_neel() {
-        wasm.spinlattice_set_neel(this.__wbg_ptr);
-    }
     /**
      * @param {number} k1
      * @param {number} k2

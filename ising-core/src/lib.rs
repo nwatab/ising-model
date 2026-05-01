@@ -126,55 +126,6 @@ impl SpinLattice {
         }
     }
 
-    pub fn set_ferro(&mut self) {
-        for byte in self.data.iter_mut() { *byte = 0xff; }
-    }
-
-    pub fn set_neel(&mut self) {
-        let n = self.n;
-        for byte in self.data.iter_mut() { *byte = 0; }
-        for z in 0..n {
-            for y in 0..n {
-                for x in 0..n {
-                    if (x + y + z) % 2 == 0 {
-                        let idx = bit_index(x, y, z, n);
-                        self.data[idx >> 3] |= 1u8 << (idx & 7);
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn set_layered(&mut self) {
-        let n = self.n;
-        for byte in self.data.iter_mut() { *byte = 0; }
-        for z in 0..n {
-            for y in 0..n {
-                for x in 0..n {
-                    if x % 2 == 0 {
-                        let idx = bit_index(x, y, z, n);
-                        self.data[idx >> 3] |= 1u8 << (idx & 7);
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn set_diagonal_layered(&mut self) {
-        let n = self.n;
-        for byte in self.data.iter_mut() { *byte = 0; }
-        for z in 0..n {
-            for y in 0..n {
-                for x in 0..n {
-                    if (y + z) % 2 == 0 {
-                        let idx = bit_index(x, y, z, n);
-                        self.data[idx >> 3] |= 1u8 << (idx & 7);
-                    }
-                }
-            }
-        }
-    }
-
     // Synchronous sweep: all 8 colour sublattices are processed simultaneously.
     // Every flip decision uses the pre-sweep state, so no colour needs to wait
     // for another.  ΔE = −2 × energy_at avoids the flip/restore cycle.

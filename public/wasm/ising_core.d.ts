@@ -15,10 +15,6 @@ export class SpinLattice {
     neel_order_param(): number;
     constructor(n: number, seed: bigint);
     randomize(): void;
-    set_diagonal_layered(): void;
-    set_ferro(): void;
-    set_layered(): void;
-    set_neel(): void;
     sublattice_sweep(k1: number, k2: number, h: number): void;
 }
 
@@ -35,10 +31,6 @@ export interface InitOutput {
     readonly spinlattice_neel_order_param: (a: number) => number;
     readonly spinlattice_new: (a: number, b: bigint) => number;
     readonly spinlattice_randomize: (a: number) => void;
-    readonly spinlattice_set_diagonal_layered: (a: number) => void;
-    readonly spinlattice_set_ferro: (a: number) => void;
-    readonly spinlattice_set_layered: (a: number) => void;
-    readonly spinlattice_set_neel: (a: number) => void;
     readonly spinlattice_sublattice_sweep: (a: number, b: number, c: number, d: number) => void;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;

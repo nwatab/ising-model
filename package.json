@@ -7,8 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "simulate": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/simulate.ts",
-    "phase-diagram": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/simulate-phase-diagram.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -32,8 +30,6 @@
     "eslint-config-next": "16.2.4",
     "prettier": "^3.5.3",
     "tailwindcss": "^4",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "^5",
     "vitest": "^4.1.5"
   }

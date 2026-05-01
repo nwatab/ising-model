@@ -60,15 +60,9 @@ function AccordionSection({
 }
 
 export function IsingPage({
-  initialSpinsBase64,
   latticeSize,
-  initialBetaJ,
-  initialBetaH,
 }: {
-  initialSpinsBase64: string;
   latticeSize: number;
-  initialBetaJ: number;
-  initialBetaH: number;
 }) {
   const [tStar, setTStar] = useState<number>(T_STAR_CRITICAL);
   const [jSign, setJSign] = useState<1 | -1>(1);
@@ -91,36 +85,29 @@ export function IsingPage({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const initialSpins = useMemo(
-    () => Uint8Array.from(atob(initialSpinsBase64), (c) => c.charCodeAt(0)),
-    [initialSpinsBase64]
+  const [warmSpins, setWarmSpins] = useState<Uint8Array>(() =>
+    new Uint8Array(SpinLattice.createRandom(latticeSize))
   );
-
-  const [warmSpins, setWarmSpins] = useState<Uint8Array>(initialSpins);
   const handleReset = () =>
     setWarmSpins(new Uint8Array(SpinLattice.createRandom(latticeSize)));
 
-  const initialLattice = useMemo(() => new SpinLattice(initialSpins), [initialSpins]);
   const phaseDiagramData = phaseDiagramRaw as unknown as PhaseDiagramData;
 
-  const initialStats = useMemo<SimStats>(
-    () => ({
-      magnetization: initialLattice.magnetization(),
-      energyPerSite:
-        (initialLattice.betaEnergy(initialBetaJ, 0, initialBetaH) /
-          initialLattice.spinCount) * T_STAR_CRITICAL,
+  const [stats, setStats] = useState<SimStats>(() => {
+    const lat = new SpinLattice(latticeSize);
+    const K1 = 1 / T_STAR_CRITICAL;
+    return {
+      magnetization: lat.magnetization(),
+      energyPerSite: (lat.betaEnergy(K1, 0, 0) / lat.spinCount) * T_STAR_CRITICAL,
       sweeps: 0,
-      neelOrderParam: initialLattice.neelOrderParam(),
+      neelOrderParam: lat.neelOrderParam(),
       stripeOrderParam: 0,
       skPath: null,
       energySamples: null,
       magnetizationSamples: null,
       histSamplesFilled: 0,
-    }),
-    [initialLattice, initialBetaJ, initialBetaH]
-  );
-
-  const [stats, setStats] = useState<SimStats>(initialStats);
+    };
+  });
 
   useSimulation({
     canvasRef,
