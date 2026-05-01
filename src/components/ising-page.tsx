@@ -6,6 +6,7 @@ import { T_STAR_CRITICAL } from "@/constants";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
 import StructureFactorPanel from "./structure-factor-panel";
+import EnergyHistogramPanel from "./energy-histogram-panel";
 import PhaseDiagramPanel from "./phase-diagram-panel";
 import { SpinLattice } from "@/services/spin-lattice";
 import type { SliceAxis } from "@/services/canvas-lattice";
@@ -80,6 +81,7 @@ export function IsingPage({
   const [paramsOpen, setParamsOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
   const [skOpen, setSkOpen] = useState(true);
+  const [histOpen, setHistOpen] = useState(true);
   const [phaseOpen, setPhaseOpen] = useState(true);
 
   const K1 = jSign / tStar;
@@ -110,6 +112,7 @@ export function IsingPage({
       neelOrderParam: initialLattice.neelOrderParam(),
       stripeOrderParam: 0,
       skPath: null,
+      energySamples: null,
     }),
     [initialLattice, initialBetaJ, initialBetaH]
   );
@@ -213,6 +216,14 @@ export function IsingPage({
         onToggle={() => setSkOpen((o) => !o)}
       >
         <StructureFactorPanel skPath={stats.skPath} latticeSize={latticeSize} />
+      </AccordionSection>
+      <AccordionSection
+        title="Energy Distribution"
+        tip="Histogram of E/site samples. Blue curve: Gaussian fit (Boltzmann distribution in thermodynamic limit)."
+        open={histOpen}
+        onToggle={() => setHistOpen((o) => !o)}
+      >
+        <EnergyHistogramPanel energySamples={stats.energySamples} />
       </AccordionSection>
     </div>
   );
