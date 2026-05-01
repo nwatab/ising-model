@@ -118,6 +118,8 @@ export default function StatisticalInfo({
         <span>
           {correlationLength === null
             ? <span className="text-gray-500">—</span>
+            : correlationLength === 0
+            ? <span className="text-gray-400 text-xs">&lt; a</span>
             : correlationLength > latticeSize / 2
             ? <span className="text-yellow-400">&gt; L/2</span>
             : <>{correlationLength.toFixed(2)} <span className="text-gray-400 text-xs">a</span></>}
