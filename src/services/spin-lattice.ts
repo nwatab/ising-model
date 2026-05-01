@@ -34,9 +34,7 @@ export class SpinLattice extends BitPackedArray {
   }
 
   static createRandom(N: number): SpinLattice {
-    const arr = new SpinLattice(N);
-    arr.randomize();
-    return arr;
+    return new SpinLattice(N);
   }
 
   static createFerro(N: number): SpinLattice {
@@ -79,10 +77,7 @@ export class SpinLattice extends BitPackedArray {
   }
 
   randomize(): this {
-    const total = this.spinCount;
-    for (let i = 0; i < total; i++) {
-      this.setBit(i, Math.random() < 0.5 ? 1 : 0);
-    }
+    crypto.getRandomValues(this);
     return this;
   }
   /** in class BitPackedSpinArray */
