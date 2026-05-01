@@ -4,7 +4,7 @@ export type { SpinLattice as WasmLattice };
 // Inline the subset of the generated types we need at runtime,
 // so we don't have to bundle the wasm glue through webpack.
 interface WasmModule {
-  default(wasmUrl: string): Promise<unknown>;
+  default(opts: { module_or_path: string }): Promise<unknown>;
   SpinLattice: {
     new(n: number, seed: bigint): SpinLattice;
     from_bytes(bytes: Uint8Array, n: number, seed: bigint): SpinLattice;
@@ -22,8 +22,8 @@ export function loadWasm(): Promise<WasmModule> {
     const m = await import(
       /* webpackIgnore: true */ "/wasm/ising_core.js" as string
     ) as WasmModule;
-    await m.default("/wasm/ising_core_bg.wasm");
+    await m.default({ module_or_path: "/wasm/ising_core_bg.wasm" });
     return m;
-  })();
+  })().catch((e) => { console.error("[wasm] load failed:", e); throw e; });
   return ready;
 }
