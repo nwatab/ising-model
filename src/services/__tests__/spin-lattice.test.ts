@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, test } from "vitest";
 import { SpinLattice } from "../spin-lattice";
 
 // Helpers -----------------------------------------------------------------
@@ -172,5 +172,92 @@ describe("SpinLattice – betaEnergy", () => {
   it("betaJ = 0 and betaH = 0 gives zero energy regardless of spin config", () => {
     expect(uniform(4, 1).betaEnergy(0, 0, 0)).toBeCloseTo(0);
     expect(uniform(4, -1).betaEnergy(0, 0, 0)).toBeCloseTo(0);
+  });
+
+  it("NNN energy: all-up lattice with betaJ2 = 1", () => {
+    // 12 NNN bonds per site, each = +1; N³ × 12/2 bonds total; E = -betaJ2 × bonds
+    const N = 2;
+    const lat = uniform(N, 1);
+    expect(lat.betaEnergy(0, 1, 0)).toBeCloseTo(-(N ** 3) * 6);
+  });
+});
+
+// -------------------------------------------------------------------------
+
+describe("SpinLattice – bitIndex layout", () => {
+  test.each([2, 4, 8])("N=%i: all N³ coords map to distinct indices in [0, N³)", (N) => {
+    const lat = new SpinLattice(N);
+    const seen = new Set<number>();
+    for (let z = 0; z < N; z++)
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++) {
+          const idx = lat.bitIndex({ x, y, z });
+          expect(idx).toBeGreaterThanOrEqual(0);
+          expect(idx).toBeLessThan(N ** 3);
+          expect(seen.has(idx)).toBe(false);
+          seen.add(idx);
+        }
+    expect(seen.size).toBe(N ** 3);
+  });
+
+  it("periodic wrapping resolves to the same index as the canonical coord", () => {
+    const lat = new SpinLattice(4);
+    expect(lat.bitIndex({ x: 4, y: 0, z: 0 })).toBe(lat.bitIndex({ x: 0, y: 0, z: 0 }));
+    expect(lat.bitIndex({ x: -1, y: 0, z: 0 })).toBe(lat.bitIndex({ x: 3, y: 0, z: 0 }));
+    expect(lat.bitIndex({ x: 0, y: 5, z: -2 })).toBe(lat.bitIndex({ x: 0, y: 1, z: 2 }));
+  });
+});
+
+// -------------------------------------------------------------------------
+
+describe("SpinLattice – order parameters", () => {
+  it("neelOrderParam: perfect Néel state returns +1 or −1", () => {
+    const lat = SpinLattice.createNeel(4);
+    expect(Math.abs(lat.neelOrderParam())).toBeCloseTo(1);
+  });
+
+  it("neelOrderParam: ferromagnetic state returns 0", () => {
+    expect(SpinLattice.createFerro(4).neelOrderParam()).toBeCloseTo(0);
+  });
+
+  it("stripeOrderParam: perfect layered state (along x) returns 1", () => {
+    expect(SpinLattice.createLayered(4).stripeOrderParam()).toBeCloseTo(1);
+  });
+
+  it("stripeOrderParam: diagonal-layered state returns 1", () => {
+    expect(SpinLattice.createDiagonalLayered(4).stripeOrderParam()).toBeCloseTo(1);
+  });
+
+  it("stripeOrderParam: ferromagnetic state returns 0", () => {
+    expect(SpinLattice.createFerro(4).stripeOrderParam()).toBeCloseTo(0);
+  });
+});
+
+// -------------------------------------------------------------------------
+
+describe("SpinLattice – energyAt", () => {
+  it("all-up lattice: flipping any site raises energy by 12 betaJ (6 NN each contributing 2)", () => {
+    const N = 4;
+    const betaJ = 1;
+    const lat = uniform(N, 1);
+    const coord = { x: 2, y: 2, z: 2 };
+    const eBefore = lat.energyAt(coord, betaJ, 0, 0);
+    lat.flipSpin(coord);
+    const eAfter = lat.energyAt(coord, betaJ, 0, 0);
+    // flipped site is -1 surrounded by 6 +1 neighbours → local E goes from -6 to +6
+    expect(eAfter - eBefore).toBeCloseTo(12);
+  });
+
+  it("all-up with NNN: flipping raises energy by 12·betaJ + 24·betaJ2", () => {
+    const N = 4;
+    const betaJ = 1;
+    const betaJ2 = 1;
+    const lat = uniform(N, 1);
+    const coord = { x: 2, y: 2, z: 2 };
+    const eBefore = lat.energyAt(coord, betaJ, betaJ2, 0);
+    lat.flipSpin(coord);
+    const eAfter = lat.energyAt(coord, betaJ, betaJ2, 0);
+    // s flips +1→-1; ΔE = 2·betaJ·nnSum + 2·betaJ2·nnnSum = 2·1·6 + 2·1·12 = 36
+    expect(eAfter - eBefore).toBeCloseTo(12 * betaJ + 24 * betaJ2);
   });
 });
