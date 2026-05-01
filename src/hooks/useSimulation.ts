@@ -102,11 +102,12 @@ function fitCorrelationLength(
     const y = 1 / s;
     sumX += dk2; sumY += y; sumXX += dk2 * dk2; sumXY += dk2 * y; n++;
   }
-  if (n < 2) return null;
+  if (n < 2) { console.log("[ξ] AFM n<2", {peakIdx, lo, hi, n}); return null; }
   const denom = n * sumXX - sumX * sumX;
-  if (Math.abs(denom) < 1e-30) return null;
+  if (Math.abs(denom) < 1e-30) { console.log("[ξ] AFM denom≈0", {denom}); return null; }
   const alpha = (sumY * sumXX - sumX * sumXY) / denom;
   const beta  = (n * sumXY - sumX * sumY)  / denom;
+  console.log("[ξ] AFM", {peakIdx, n, alpha, beta, xi: alpha>0&&beta>0 ? Math.sqrt(beta/alpha) : null});
   if (alpha <= 0 || beta <= 0) return null;
   return Math.sqrt(beta / alpha);
 }
