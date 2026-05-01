@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { SpinLattice } from "@/services/spin-lattice";
 import { simulateMetropoliseSweepLattice } from "@/services/metropolis";
-import { renderSliceToImageData, drawTiledOnCanvas } from "@/services/canvas-lattice";
+import { renderSliceToImageData, drawTiledOnCanvas, SliceAxis } from "@/services/canvas-lattice";
 
 const FRAMES_PER_SWEEP = 6; // one full lattice sweep every 6 frames (~10/s at 60 fps)
 const PIXELS_PER_SPIN = 16;
@@ -61,7 +61,8 @@ export function useSimulation({
   betaJ2,
   betaH,
   tStar,
-  z,
+  sliceAxis,
+  sliceIndex,
   running,
   onStats,
 }: {
@@ -71,12 +72,13 @@ export function useSimulation({
   betaJ2: number;
   betaH: number;
   tStar: number;
-  z: number;
+  sliceAxis: SliceAxis;
+  sliceIndex: number;
   running: boolean;
   onStats: (stats: SimStats) => void;
 }) {
   const latticeRef = useRef<SpinLattice>(new SpinLattice(initialSpins));
-  const paramsRef = useRef({ betaJ, betaJ2, betaH, tStar, z });
+  const paramsRef = useRef({ betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex });
   const runningRef = useRef(running);
   const onStatsRef = useRef(onStats);
   const sweepsRef = useRef(0);
@@ -86,7 +88,7 @@ export function useSimulation({
   const skLastComputedSweepRef = useRef(-1);
   const stripeRef = useRef<number>(0);
 
-  paramsRef.current = { betaJ, betaJ2, betaH, tStar, z };
+  paramsRef.current = { betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex };
   runningRef.current = running;
   onStatsRef.current = onStats;
 
@@ -116,7 +118,7 @@ export function useSimulation({
     let animId: number;
 
     const tick = () => {
-      const { betaJ, betaJ2, betaH, tStar, z } = paramsRef.current;
+      const { betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex } = paramsRef.current;
 
       frameRef.current++;
       if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
@@ -135,7 +137,7 @@ export function useSimulation({
         if (ctx) {
           const N = latticeRef.current.latticeSize;
           const tileSize = PIXELS_PER_SPIN * N;
-          const imageData = renderSliceToImageData(latticeRef.current, z);
+          const imageData = renderSliceToImageData(latticeRef.current, sliceAxis, sliceIndex);
           drawTiledOnCanvas(ctx, imageData, tileSize);
         }
       }

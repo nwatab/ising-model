@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { T_STAR_LOG_MIN, T_STAR_LOG_MAX, H_MIN, H_MAX, H_STEP, J2_MIN, J2_MAX, J2_STEP } from "@/config";
 import { T_STAR_CRITICAL } from "@/constants";
+import type { SliceAxis } from "@/services/canvas-lattice";
 
 const LOG_MIN = Math.log10(T_STAR_LOG_MIN);
 const LOG_MAX = Math.log10(T_STAR_LOG_MAX);
@@ -26,8 +27,10 @@ export default function ConfigSection({
   setJ2OverJ1,
   h,
   setH,
-  z,
-  setZ,
+  sliceAxis,
+  setSliceAxis,
+  sliceIndex,
+  setSliceIndex,
   latticeSize,
 }: {
   tStar: number;
@@ -38,8 +41,10 @@ export default function ConfigSection({
   setJ2OverJ1: (v: number) => void;
   h: number;
   setH: (v: number) => void;
-  z: number;
-  setZ: (v: number) => void;
+  sliceAxis: SliceAxis;
+  setSliceAxis: (v: SliceAxis) => void;
+  sliceIndex: number;
+  setSliceIndex: (v: number) => void;
   latticeSize: number;
 }) {
   const isInf = !isFinite(tStar);
@@ -191,19 +196,33 @@ export default function ConfigSection({
         />
       </div>
 
-      {/* z-slice slider */}
+      {/* slice axis + index */}
       <div className="mb-4 ml-2">
-        <div className="text-xs text-gray-400 mb-0.5">Display layer</div>
+        <div className="text-xs text-gray-400 mb-0.5">Display slice</div>
+        <div className="flex gap-2 mb-2">
+          {(["x", "y", "z"] as SliceAxis[]).map((ax) => (
+            <label key={ax} className="flex items-center gap-1 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="sliceAxis"
+                checked={sliceAxis === ax}
+                onChange={() => setSliceAxis(ax)}
+                className="mr-0.5"
+              />
+              {ax}-axis
+            </label>
+          ))}
+        </div>
         <label className="block text-sm font-medium mb-1">
-          z = <span className="font-mono">{z}</span>
+          {sliceAxis} = <span className="font-mono">{sliceIndex}</span>
         </label>
         <input
           type="range"
           min={0}
           max={latticeSize - 1}
           step={1}
-          value={z}
-          onChange={(e) => setZ(parseInt(e.target.value))}
+          value={sliceIndex}
+          onChange={(e) => setSliceIndex(parseInt(e.target.value))}
           className="w-full"
         />
       </div>

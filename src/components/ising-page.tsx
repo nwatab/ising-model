@@ -8,6 +8,7 @@ import StatisticalInfo from "./statistical-info";
 import StructureFactorPanel from "./structure-factor-panel";
 import PhaseDiagramPanel from "./phase-diagram-panel";
 import { SpinLattice } from "@/services/spin-lattice";
+import type { SliceAxis } from "@/services/canvas-lattice";
 import { decodeLattice } from "@/services/decode-lattice";
 import type { PhaseDiagramData } from "@/types";
 import phaseDiagramRaw from "@/data/phase-diagram.json";
@@ -90,7 +91,8 @@ export function IsingPage({
   const [jSign, setJSign] = useState<1 | -1>(1);
   const [j2OverJ1, setJ2OverJ1] = useState(0);
   const [h, setH] = useState(0);
-  const [z, setZ] = useState(Math.floor(latticeSize / 2));
+  const [sliceAxis, setSliceAxis] = useState<SliceAxis>("z");
+  const [sliceIndex, setSliceIndex] = useState(Math.floor(latticeSize / 2));
   const [running, setRunning] = useState(false);
 
   const [paramsOpen, setParamsOpen] = useState(true);
@@ -114,10 +116,13 @@ export function IsingPage({
 
   useEffect(() => {
     if (!mountedRef.current) { mountedRef.current = true; return; }
-    // J₁ < 0: no AFM snapshots exist; seed from Néel-ordered state so the
-    // system thermalizes quickly without kinetically frozen domain walls.
+    // J₁ < 0: no AFM snapshots exist; seed from the correct ordered ground state.
+    // J₂/J₁ > 0.25 → diagonal stripe (0,π,π); otherwise Néel (π,π,π).
     if (jSign < 0) {
-      setWarmSpins(new Uint8Array(SpinLattice.createNeel(latticeSize)));
+      const seed = j2OverJ1 > 0.25
+        ? SpinLattice.createDiagonalLayered(latticeSize)
+        : SpinLattice.createNeel(latticeSize);
+      setWarmSpins(new Uint8Array(seed));
       return;
     }
     if (!isFinite(tStar)) return;
@@ -129,7 +134,7 @@ export function IsingPage({
       .then((spins) => setWarmSpins(spins))
       .catch((e) => { if (e.name !== "AbortError") console.error(e); });
     return () => ctrl.abort();
-  }, [tStar, jSign, latticeSize]);
+  }, [tStar, jSign, j2OverJ1, latticeSize]);
 
   const initialLattice = useMemo(() => new SpinLattice(initialSpins), [initialSpins]);
   const phaseDiagramData = phaseDiagramRaw as unknown as PhaseDiagramData;
@@ -157,7 +162,8 @@ export function IsingPage({
     betaJ2: K2,
     betaH: hTilde,
     tStar,
-    z,
+    sliceAxis,
+    sliceIndex,
     running,
     onStats: setStats,
   });
@@ -180,8 +186,10 @@ export function IsingPage({
         setJ2OverJ1={setJ2OverJ1}
         h={h}
         setH={setH}
-        z={z}
-        setZ={setZ}
+        sliceAxis={sliceAxis}
+        setSliceAxis={setSliceAxis}
+        sliceIndex={sliceIndex}
+        setSliceIndex={setSliceIndex}
         latticeSize={latticeSize}
       />
       <button
