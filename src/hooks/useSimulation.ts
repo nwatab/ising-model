@@ -19,6 +19,30 @@ function sampleStdDev(arr: Float32Array, n: number): number {
   return Math.sqrt(sq / (n - 1));
 }
 
+// C(r) ≈ f(r)/f(0), f(r) = Σ_{j=0}^{steps} ⟨S(k_j)/N³⟩·cos(2π·nx_j·r/N)
+// Uses Γ→X segment only; cost O(steps·rMax) per call (~2k ops for N=128).
+function computeCorrelationData(
+  skSum: Float32Array,
+  count: number,
+  pathDef: { nx: number; ny: number; nz: number }[],
+  N: number
+): Float32Array | null {
+  const steps = Math.max(4, Math.floor(Math.floor(N / 2) / 2));
+  const rMax = Math.floor(N / 2);
+  const twoPiOverN = 2 * Math.PI / N;
+  let f0 = 0;
+  for (let j = 0; j <= steps; j++) f0 += skSum[j] / count;
+  if (f0 <= 0) return null;
+  const result = new Float32Array(rMax + 1);
+  result[0] = 1.0;
+  for (let r = 1; r <= rMax; r++) {
+    let f = 0;
+    for (let j = 0; j <= steps; j++) f += (skSum[j] / count) * Math.cos(twoPiOverN * pathDef[j].nx * r);
+    result[r] = f / f0;
+  }
+  return result;
+}
+
 // Ornstein-Zernike fit: S(k)/N³ = A/(1+ξ²k²) → 1/S = (1/A) + (ξ²/A)k²
 // Uses points 1..steps on the Γ→X segment (excludes Γ itself to avoid Bragg peak).
 // Returns ξ in lattice spacings, or null when the fit is degenerate.
@@ -107,6 +131,8 @@ export type SimStats = {
   susceptibility: number | null;
   /** FM correlation length in lattice units from OZ fit near Γ; null until ≥10 S(k) measurements */
   correlationLength: number | null;
+  /** C(r)/C(0) for r=0..N/2 along x-axis (1D DFT of Γ→X S(k)); null until ≥10 measurements */
+  correlationData: Float32Array | null;
 };
 
 export function useSimulation({
@@ -316,17 +342,24 @@ export function useSimulation({
       const susceptibility = (isFinite(tStar) && tStar > 0 && magnetizationStdDev !== null)
         ? spinCount * magnetizationStdDev ** 2 / tStar
         : null;
-      const correlationLength = (
+      const skReady = (
         isFinite(tStar) &&
         skSumCountRef.current >= 10 &&
         skSumBufRef.current !== null &&
         skPathDefRef.current.length > 0
-      ) ? fitCorrelationLength(
-          skSumBufRef.current,
-          skSumCountRef.current,
-          skPathDefRef.current,
-          latticeRef.current.latticeSize
-        ) : null;
+      );
+      const correlationLength = skReady ? fitCorrelationLength(
+        skSumBufRef.current!,
+        skSumCountRef.current,
+        skPathDefRef.current,
+        latticeRef.current.latticeSize
+      ) : null;
+      const correlationData = skReady ? computeCorrelationData(
+        skSumBufRef.current!,
+        skSumCountRef.current,
+        skPathDefRef.current,
+        latticeRef.current.latticeSize
+      ) : null;
 
       onStatsRef.current({
         magnetization: wl ? wl.magnetization() : latticeRef.current.magnetization(),
@@ -343,6 +376,7 @@ export function useSimulation({
         heatCapacity,
         susceptibility,
         correlationLength,
+        correlationData,
       });
 
       animId = requestAnimationFrame(tick);

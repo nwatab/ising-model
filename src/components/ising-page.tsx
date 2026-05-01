@@ -6,6 +6,7 @@ import { T_STAR_CRITICAL } from "@/constants";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
 import StructureFactorPanel from "./structure-factor-panel";
+import CorrelationPanel from "./correlation-panel";
 import HistogramPanel from "./energy-histogram-panel";
 import PhaseDiagramPanel from "./phase-diagram-panel";
 import { SpinLattice } from "@/services/spin-lattice";
@@ -75,6 +76,7 @@ export function IsingPage({
   const [paramsOpen, setParamsOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
   const [skOpen, setSkOpen] = useState(true);
+  const [crOpen, setCrOpen] = useState(true);
   const [eHistOpen, setEHistOpen] = useState(true);
   const [mHistOpen, setMHistOpen] = useState(true);
   const [phaseOpen, setPhaseOpen] = useState(true);
@@ -119,6 +121,7 @@ export function IsingPage({
     heatCapacity: null,
     susceptibility: null,
     correlationLength: null,
+    correlationData: null,
   });
 
   useSimulation({
@@ -224,6 +227,14 @@ export function IsingPage({
         onToggle={() => setSkOpen((o) => !o)}
       >
         <StructureFactorPanel skPath={stats.skPath} latticeSize={latticeSize} />
+      </AccordionSection>
+      <AccordionSection
+        title="C(r)"
+        tip="Time-averaged spin-spin correlation C(r)/C(0) along x-axis. FM: flat≈1. PM: decays exponentially. Stripe-x: oscillates ±1."
+        open={crOpen}
+        onToggle={() => setCrOpen((o) => !o)}
+      >
+        <CorrelationPanel data={stats.correlationData} latticeSize={latticeSize} />
       </AccordionSection>
       <AccordionSection
         title="Energy Distribution"
