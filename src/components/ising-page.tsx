@@ -6,6 +6,7 @@ import { T_STAR_CRITICAL } from "@/constants";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
 import StructureFactorPanel from "./structure-factor-panel";
+import HistogramPanel from "./energy-histogram-panel";
 import PhaseDiagramPanel from "./phase-diagram-panel";
 import { SpinLattice } from "@/services/spin-lattice";
 import type { SliceAxis } from "@/services/canvas-lattice";
@@ -80,6 +81,8 @@ export function IsingPage({
   const [paramsOpen, setParamsOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
   const [skOpen, setSkOpen] = useState(true);
+  const [eHistOpen, setEHistOpen] = useState(true);
+  const [mHistOpen, setMHistOpen] = useState(true);
   const [phaseOpen, setPhaseOpen] = useState(true);
 
   const K1 = jSign / tStar;
@@ -110,6 +113,9 @@ export function IsingPage({
       neelOrderParam: initialLattice.neelOrderParam(),
       stripeOrderParam: 0,
       skPath: null,
+      energySamples: null,
+      magnetizationSamples: null,
+      histSamplesFilled: 0,
     }),
     [initialLattice, initialBetaJ, initialBetaH]
   );
@@ -213,6 +219,33 @@ export function IsingPage({
         onToggle={() => setSkOpen((o) => !o)}
       >
         <StructureFactorPanel skPath={stats.skPath} latticeSize={latticeSize} />
+      </AccordionSection>
+      <AccordionSection
+        title="Energy Distribution"
+        tip="E/site = (1/N³)ΣEᵢ sampled each sweep. Gaussian by CLT."
+        open={eHistOpen}
+        onToggle={() => setEHistOpen((o) => !o)}
+      >
+        <HistogramPanel
+          samples={stats.energySamples}
+          samplesFilled={stats.histSamplesFilled}
+          xLabel="E"
+          barColor="#f97316"
+          showGaussian={true}
+        />
+      </AccordionSection>
+      <AccordionSection
+        title="Magnetization Distribution"
+        tip="M = (1/N³)Σsᵢ sampled each sweep. Bimodal below Tc shows ergodicity is broken for large N."
+        open={mHistOpen}
+        onToggle={() => setMHistOpen((o) => !o)}
+      >
+        <HistogramPanel
+          samples={stats.magnetizationSamples}
+          samplesFilled={stats.histSamplesFilled}
+          xLabel="M"
+          barColor="#34d399"
+        />
       </AccordionSection>
     </div>
   );

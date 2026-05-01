@@ -9,6 +9,7 @@ import type { WasmLattice } from "@/services/wasm-loader";
 const FRAMES_PER_SWEEP = 6; // one full lattice sweep every 6 frames (~10/s at 60 fps)
 const PIXELS_PER_SPIN = 16;
 const SF_SWEEP_INTERVAL = 5; // recompute S(k) path every N sweeps
+const ENERGY_BUFFER_SIZE = 512;
 
 // High-symmetry path Γ→X→M→R→Γ on the simple-cubic Brillouin zone.
 // Coordinates are in units of (2π/N), so (N/2) corresponds to k=π.
@@ -54,6 +55,11 @@ export type SimStats = {
   stripeOrderParam: number; // max_α sqrt(S(k_α)/N³) — detects layered phase
   /** S(k)/N³ along Γ→X→M→R→Γ; null until first measurement */
   skPath: Float32Array | null;
+  /** energy/site samples; null until ≥20 */
+  energySamples: Float32Array | null;
+  /** magnetization samples; null until ≥20 */
+  magnetizationSamples: Float32Array | null;
+  histSamplesFilled: number;
 };
 
 export function useSimulation({
@@ -90,6 +96,10 @@ export function useSimulation({
   const skPathDefRef = useRef<{ nx: number; ny: number; nz: number }[]>([]);
   const skLastComputedSweepRef = useRef(-1);
   const stripeRef = useRef<number>(0);
+  const energyBufRef = useRef(new Float32Array(ENERGY_BUFFER_SIZE));
+  const magnetizationBufRef = useRef(new Float32Array(ENERGY_BUFFER_SIZE));
+  const histSampleCountRef = useRef(0);
+  const lastParamsForHistRef = useRef<{ betaJ: number; betaJ2: number; betaH: number } | null>(null);
 
   paramsRef.current = { betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex };
   runningRef.current = running;
@@ -103,6 +113,8 @@ export function useSimulation({
     skLastComputedSweepRef.current = -1;
     stripeRef.current = 0;
     skPathDefRef.current = buildSkPath(newLat.latticeSize);
+    histSampleCountRef.current = 0;
+    lastParamsForHistRef.current = null;
 
     // (Re-)initialize WASM lattice from the new JS bytes.
     // loadWasm() is cached after the first call.
@@ -134,6 +146,7 @@ export function useSimulation({
       const { betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex } = paramsRef.current;
 
       frameRef.current++;
+      let didSweep = false;
       if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
         const wl = wasmRef.current;
         if (wl) {
@@ -146,6 +159,7 @@ export function useSimulation({
           );
         }
         sweepsRef.current++;
+        didSweep = true;
       }
 
       const canvas = canvasRef.current;
@@ -179,15 +193,34 @@ export function useSimulation({
         stripeRef.current = lat.stripeOrderParam();
       }
 
+      const energyPerSite = isFinite(tStar)
+        ? (latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) / latticeRef.current.spinCount) * tStar
+        : 0;
+
+      if (didSweep && isFinite(tStar)) {
+        const last = lastParamsForHistRef.current;
+        if (!last || last.betaJ !== betaJ || last.betaJ2 !== betaJ2 || last.betaH !== betaH) {
+          histSampleCountRef.current = 0;
+          lastParamsForHistRef.current = { betaJ, betaJ2, betaH };
+        }
+        const pos = histSampleCountRef.current % ENERGY_BUFFER_SIZE;
+        energyBufRef.current[pos] = energyPerSite;
+        magnetizationBufRef.current[pos] = latticeRef.current.magnetization();
+        histSampleCountRef.current++;
+      }
+
+      const filled = Math.min(histSampleCountRef.current, ENERGY_BUFFER_SIZE);
+
       onStatsRef.current({
         magnetization: latticeRef.current.magnetization(),
-        energyPerSite: isFinite(tStar)
-          ? (latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) / latticeRef.current.spinCount) * tStar
-          : 0,
+        energyPerSite,
         sweeps: sweepsRef.current,
         neelOrderParam: latticeRef.current.neelOrderParam(),
         stripeOrderParam: stripeRef.current,
         skPath: skPathRef.current,
+        energySamples: filled >= 20 ? energyBufRef.current.slice(0, filled) : null,
+        magnetizationSamples: filled >= 20 ? magnetizationBufRef.current.slice(0, filled) : null,
+        histSamplesFilled: filled,
       });
 
       animId = requestAnimationFrame(tick);
