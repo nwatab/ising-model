@@ -1,0 +1,18 @@
+{
+  "name": "ising-core",
+  "type": "module",
+  "collaborators": [
+    "Naoki Watanabe <asterisk37n@gmail.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "ising_core_bg.wasm",
+    "ising_core.js",
+    "ising_core.d.ts"
+  ],
+  "main": "ising_core.js",
+  "types": "ising_core.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
