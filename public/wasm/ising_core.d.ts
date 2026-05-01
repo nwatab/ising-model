@@ -4,6 +4,7 @@
 export class SpinLattice {
     free(): void;
     [Symbol.dispose](): void;
+    beta_energy(k1: number, k2: number, h: number): number;
     /**
      * Raw bitpacked bytes (color-sorted layout), for copying to JS.
      */
@@ -21,6 +22,8 @@ export class SpinLattice {
      * axis: 0=x (yz-plane), 1=y (xz-plane), 2=z (xy-plane)
      */
     render_slice(axis: number, index: number): Uint8Array;
+    stripe_order_param(): number;
+    structure_factor_path(nxs: Int32Array, nys: Int32Array, nzs: Int32Array): Uint8Array;
     sublattice_sweep(k1: number, k2: number, h: number): void;
 }
 
@@ -29,6 +32,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_spinlattice_free: (a: number, b: number) => void;
+    readonly spinlattice_beta_energy: (a: number, b: number, c: number, d: number) => number;
     readonly spinlattice_data: (a: number) => [number, number];
     readonly spinlattice_from_bytes: (a: number, b: number, c: number, d: bigint) => number;
     readonly spinlattice_get_spin: (a: number, b: number, c: number, d: number) => number;
@@ -38,6 +42,8 @@ export interface InitOutput {
     readonly spinlattice_new: (a: number, b: bigint) => number;
     readonly spinlattice_randomize: (a: number) => void;
     readonly spinlattice_render_slice: (a: number, b: number, c: number) => [number, number];
+    readonly spinlattice_stripe_order_param: (a: number) => number;
+    readonly spinlattice_structure_factor_path: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number];
     readonly spinlattice_sublattice_sweep: (a: number, b: number, c: number, d: number) => void;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;

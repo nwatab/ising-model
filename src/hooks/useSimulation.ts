@@ -143,11 +143,11 @@ export function useSimulation({
 
     const tick = () => {
       const { betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex } = paramsRef.current;
+      const wl = wasmRef.current;
 
       frameRef.current++;
       let didSweep = false;
       if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
-        const wl = wasmRef.current;
         if (wl) {
           wl.sublattice_sweep(betaJ, betaJ2, betaH);
           latticeRef.current.set(wl.data()); // sync bytes back to JS lattice
@@ -188,20 +188,32 @@ export function useSimulation({
         skPathDefRef.current.length > 0
       ) {
         skLastComputedSweepRef.current = sw;
-        const path = skPathDefRef.current;
-        const arr = new Float32Array(path.length);
-        const lat = latticeRef.current;
-        const N3 = lat.spinCount;
-        for (let i = 0; i < path.length; i++) {
-          const { nx, ny, nz } = path[i];
-          arr[i] = lat.structureFactorAt(nx, ny, nz) / N3;
+        if (wl) {
+          const path = skPathDefRef.current;
+          const nxArr = new Int32Array(path.map(p => p.nx));
+          const nyArr = new Int32Array(path.map(p => p.ny));
+          const nzArr = new Int32Array(path.map(p => p.nz));
+          const raw = wl.structure_factor_path(nxArr, nyArr, nzArr);
+          skPathRef.current = new Float32Array(raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength));
+          stripeRef.current = wl.stripe_order_param();
+        } else {
+          const path = skPathDefRef.current;
+          const arr = new Float32Array(path.length);
+          const lat = latticeRef.current;
+          const N3 = lat.spinCount;
+          for (let i = 0; i < path.length; i++) {
+            const { nx, ny, nz } = path[i];
+            arr[i] = lat.structureFactorAt(nx, ny, nz) / N3;
+          }
+          skPathRef.current = arr;
+          stripeRef.current = lat.stripeOrderParam();
         }
-        skPathRef.current = arr;
-        stripeRef.current = lat.stripeOrderParam();
       }
 
       const energyPerSite = isFinite(tStar)
-        ? (latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) / latticeRef.current.spinCount) * tStar
+        ? wl
+          ? (wl.beta_energy(betaJ, betaJ2, betaH) / latticeRef.current.spinCount) * tStar
+          : (latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) / latticeRef.current.spinCount) * tStar
         : 0;
 
       if (didSweep && isFinite(tStar)) {
@@ -212,17 +224,19 @@ export function useSimulation({
         }
         const pos = histSampleCountRef.current % ENERGY_BUFFER_SIZE;
         energyBufRef.current[pos] = energyPerSite;
-        magnetizationBufRef.current[pos] = latticeRef.current.magnetization();
+        magnetizationBufRef.current[pos] = wl
+          ? wl.magnetization()
+          : latticeRef.current.magnetization();
         histSampleCountRef.current++;
       }
 
       const filled = Math.min(histSampleCountRef.current, ENERGY_BUFFER_SIZE);
 
       onStatsRef.current({
-        magnetization: latticeRef.current.magnetization(),
+        magnetization: wl ? wl.magnetization() : latticeRef.current.magnetization(),
         energyPerSite,
         sweeps: sweepsRef.current,
-        neelOrderParam: latticeRef.current.neelOrderParam(),
+        neelOrderParam: wl ? wl.neel_order_param() : latticeRef.current.neelOrderParam(),
         stripeOrderParam: stripeRef.current,
         skPath: skPathRef.current,
         energySamples: filled >= 20 ? energyBufRef.current.slice(0, filled) : null,
