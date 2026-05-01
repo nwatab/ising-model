@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState, useMemo, useEffect } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import Image from "next/image";
 import { useSimulation, SimStats } from "@/hooks/useSimulation";
 import { T_STAR_CRITICAL } from "@/constants";
@@ -9,26 +9,8 @@ import StructureFactorPanel from "./structure-factor-panel";
 import PhaseDiagramPanel from "./phase-diagram-panel";
 import { SpinLattice } from "@/services/spin-lattice";
 import type { SliceAxis } from "@/services/canvas-lattice";
-import { decodeLattice } from "@/services/decode-lattice";
 import type { PhaseDiagramData } from "@/types";
 import phaseDiagramRaw from "@/data/phase-diagram.json";
-
-const SNAPSHOT_BETAJS = [
-  0.184712, 0.192743, 0.201504, 0.211099, 0.221654,
-  0.233320, 0.246282, 0.260769, 0.277067,
-];
-
-function nearestBetaJ(k1: number): number {
-  const pool = k1 < 0 ? SNAPSHOT_BETAJS.map((b) => -b) : SNAPSHOT_BETAJS;
-  return pool.reduce((best, c) =>
-    Math.abs(c - k1) < Math.abs(best - k1) ? c : best
-  );
-}
-
-function snapshotUrl(k1: number): string {
-  const betaJ = nearestBetaJ(k1);
-  return `/snapshots/betaj_${betaJ.toFixed(6)}_betah_0.json`;
-}
 
 function inferPhase(M: number, mNeel: number, mStripe: number, jSign: 1 | -1): string {
   if (Math.abs(M) > 0.15) return jSign > 0 ? "Ferromagnetic" : "Antiferromagnetic";
@@ -112,29 +94,8 @@ export function IsingPage({
   );
 
   const [warmSpins, setWarmSpins] = useState<Uint8Array>(initialSpins);
-  const mountedRef = useRef(false);
-
-  useEffect(() => {
-    if (!mountedRef.current) { mountedRef.current = true; return; }
-    // J₁ < 0: no AFM snapshots exist; seed from the correct ordered ground state.
-    // J₂/J₁ > 0.25 → diagonal stripe (0,π,π); otherwise Néel (π,π,π).
-    if (jSign < 0) {
-      const seed = j2OverJ1 > 0.25
-        ? SpinLattice.createDiagonalLayered(latticeSize)
-        : SpinLattice.createNeel(latticeSize);
-      setWarmSpins(new Uint8Array(seed));
-      return;
-    }
-    if (!isFinite(tStar)) return;
-    const k1 = jSign / tStar;
-    const ctrl = new AbortController();
-    fetch(snapshotUrl(k1), { signal: ctrl.signal })
-      .then((r) => r.json())
-      .then((d) => decodeLattice(d))
-      .then((spins) => setWarmSpins(spins))
-      .catch((e) => { if (e.name !== "AbortError") console.error(e); });
-    return () => ctrl.abort();
-  }, [tStar, jSign, j2OverJ1, latticeSize]);
+  const handleReset = () =>
+    setWarmSpins(new Uint8Array(SpinLattice.createRandom(latticeSize)));
 
   const initialLattice = useMemo(() => new SpinLattice(initialSpins), [initialSpins]);
   const phaseDiagramData = phaseDiagramRaw as unknown as PhaseDiagramData;
@@ -193,16 +154,24 @@ export function IsingPage({
           setSliceIndex={setSliceIndex}
           latticeSize={latticeSize}
         />
-        <button
-          onClick={() => setRunning((r) => !r)}
-          className={`w-full py-1.5 rounded text-sm font-semibold transition-colors ${
-            running
-              ? "bg-gray-600 hover:bg-gray-500 text-white"
-              : "bg-orange-600 hover:bg-orange-500 text-white"
-          }`}
-        >
-          {running ? "⏸ Pause" : "🔥 Heat"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setRunning((r) => !r)}
+            className={`flex-1 py-1.5 rounded text-sm font-semibold transition-colors ${
+              running
+                ? "bg-gray-600 hover:bg-gray-500 text-white"
+                : "bg-orange-600 hover:bg-orange-500 text-white"
+            }`}
+          >
+            {running ? "⏸ Pause" : "🔥 Heat"}
+          </button>
+          <button
+            onClick={handleReset}
+            className="py-1.5 px-3 rounded text-sm font-semibold transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          >
+            ↺
+          </button>
+        </div>
       </AccordionSection>
       <AccordionSection
         title={`Phase Diagram (J₁ ${jSign > 0 ? ">" : "<"} 0, h=0)`}
