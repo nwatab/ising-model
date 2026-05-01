@@ -67,12 +67,6 @@ function fitCorrelationLength(
     const v = skSum[i] / count;
     if (v > peakVal) { peakVal = v; peakIdx = i; }
   }
-  // one-shot diagnostics: print the 4 highest skSum entries
-  if (peakIdx > 1) {
-    const top = Array.from({length: nPts - 2}, (_, i) => ({i: i+1, v: skSum[i+1]/count}))
-      .sort((a, b) => b.v - a.v).slice(0, 5);
-    console.log("[ξ peak]", top.map(({i,v}) => `[${i}]=${v.toExponential(3)}`).join(" "), {N, steps, nPts, peakVal: peakVal.toExponential(3), k0: pathDef[peakIdx]});
-  }
 
   if (peakIdx <= 1) {
     // FM-like: peak is right at/near Γ. Use small-k OZ fit on Γ→X (indices 1..steps).
