@@ -61,7 +61,7 @@ fn get_spin(data: &[u8], x: i64, y: i64, z: i64, n: usize) -> i32 {
     get_spin_raw(data, wrap(x, n), wrap(y, n), wrap(z, n), n)
 }
 
-#[inline(always)]
+#[cfg(test)]
 fn flip_bit(data: &mut [u8], idx: usize) {
     data[idx >> 3] ^= 1u8 << (idx & 7);
 }
@@ -175,37 +175,27 @@ impl SpinLattice {
         }
     }
 
-    // 8-sublattice checkerboard sweep.
-    // Colors are processed sequentially; within each color all N³/8 sites are
-    // mutually non-adjacent, so the order within a color does not matter.
+    // Synchronous sweep: all 8 colour sublattices are processed simultaneously.
+    // Every flip decision uses the pre-sweep state, so no colour needs to wait
+    // for another.  ΔE = −2 × energy_at avoids the flip/restore cycle.
     pub fn sublattice_sweep(&mut self, k1: f64, k2: f64, h: f64) {
         let n = self.n;
-        let m = n >> 1;
+        let mut flip_mask = vec![0u8; self.data.len()];
 
-        for color in 0u8..8 {
-            let sx = ((color >> 2) & 1) as usize;
-            let sy = ((color >> 1) & 1) as usize;
-            let sz = (color        & 1) as usize;
-
-            for iz in 0..m {
-                let z = iz * 2 + sz;
-                for iy in 0..m {
-                    let y = iy * 2 + sy;
-                    for ix in 0..m {
-                        let x = ix * 2 + sx;
-
-                        let e_before = energy_at(&self.data, x, y, z, n, k1, k2, h);
-                        let bit_idx = bit_index(x, y, z, n);
-                        flip_bit(&mut self.data, bit_idx);
-                        let e_after = energy_at(&self.data, x, y, z, n, k1, k2, h);
-                        let delta = e_after - e_before;
-
-                        if delta > 0.0 && self.rng.next_f64() > (-delta).exp() {
-                            flip_bit(&mut self.data, bit_idx); // reject
-                        }
+        for z in 0..n {
+            for y in 0..n {
+                for x in 0..n {
+                    let delta = -2.0 * energy_at(&self.data, x, y, z, n, k1, k2, h);
+                    if delta <= 0.0 || self.rng.next_f64() < (-delta).exp() {
+                        let idx = bit_index(x, y, z, n);
+                        flip_mask[idx >> 3] ^= 1u8 << (idx & 7);
                     }
                 }
             }
+        }
+
+        for (byte, &mask) in self.data.iter_mut().zip(flip_mask.iter()) {
+            *byte ^= mask;
         }
     }
 
