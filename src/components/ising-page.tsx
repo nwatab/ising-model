@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { useSimulation, SimStats } from "@/hooks/useSimulation";
 import { T_STAR_CRITICAL } from "@/constants";
@@ -91,22 +91,29 @@ export function IsingPage({
   const handleReset = () =>
     setWarmSpins(new Uint8Array(SpinLattice.createRandom(latticeSize)));
 
+  // Reinitialize spins when J₁ sign flips — changing sign means swapping the
+  // physical sample (FM ↔ AFM), so the current spin configuration is no longer
+  // meaningful.  Using a ref prevents firing on the initial render and is safe
+  // under React strict mode (second invocation sees prevJSign already updated).
+  const prevJSignRef = useRef<1 | -1>(jSign);
+  useEffect(() => {
+    if (prevJSignRef.current === jSign) return;
+    prevJSignRef.current = jSign;
+    setWarmSpins(new Uint8Array(SpinLattice.createRandom(latticeSize)));
+  }, [jSign, latticeSize]);
+
   const phaseDiagramData = phaseDiagramRaw as unknown as PhaseDiagramData;
 
-  const [stats, setStats] = useState<SimStats>(() => {
-    const lat = new SpinLattice(latticeSize);
-    const K1 = 1 / T_STAR_CRITICAL;
-    return {
-      magnetization: lat.magnetization(),
-      energyPerSite: (lat.betaEnergy(K1, 0, 0) / lat.spinCount) * T_STAR_CRITICAL,
-      sweeps: 0,
-      neelOrderParam: lat.neelOrderParam(),
-      stripeOrderParam: 0,
-      skPath: null,
-      energySamples: null,
-      magnetizationSamples: null,
-      histSamplesFilled: 0,
-    };
+  const [stats, setStats] = useState<SimStats>({
+    magnetization: 0,
+    energyPerSite: 0,
+    sweeps: 0,
+    neelOrderParam: 0,
+    stripeOrderParam: 0,
+    skPath: null,
+    energySamples: null,
+    magnetizationSamples: null,
+    histSamplesFilled: 0,
   });
 
   useSimulation({

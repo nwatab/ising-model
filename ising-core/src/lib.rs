@@ -150,27 +150,38 @@ impl SpinLattice {
         }
     }
 
-    // Synchronous sweep: all 8 colour sublattices are processed simultaneously.
-    // Every flip decision uses the pre-sweep state, so no colour needs to wait
-    // for another.  ΔE = −2 × energy_at avoids the flip/restore cycle.
+    // Sequential sublattice sweep: process the 8 colour blocks one at a time,
+    // applying each block's flips before computing the next block's decisions.
+    // Spins within the same colour are mutually non-adjacent (NN and NNN), so
+    // within a block the simultaneous update is exact.  Processing colours
+    // sequentially means later colours see already-updated neighbours, which
+    // prevents the 2-cycle that arises when every decision is based on a single
+    // pre-sweep snapshot (fully-synchronous update).
     pub fn sublattice_sweep(&mut self, k1: f64, k2: f64, h: f64) {
         let n = self.n;
-        let mut flip_mask = vec![0u8; self.data.len()];
-
-        for z in 0..n {
-            for y in 0..n {
-                for x in 0..n {
-                    let delta = -2.0 * energy_at(&self.data, x, y, z, n, k1, k2, h);
-                    if delta <= 0.0 || self.rng.next_f64() < (-delta).exp() {
-                        let idx = bit_index(x, y, z, n);
-                        flip_mask[idx >> 3] ^= 1u8 << (idx & 7);
+        let m = n / 2;
+        for color in 0u8..8 {
+            let cx = ((color >> 2) & 1) as usize;
+            let cy = ((color >> 1) & 1) as usize;
+            let cz = (color & 1) as usize;
+            let mut flip_mask = vec![0u8; self.data.len()];
+            for iz in 0..m {
+                for iy in 0..m {
+                    for ix in 0..m {
+                        let x = 2 * ix + cx;
+                        let y = 2 * iy + cy;
+                        let z = 2 * iz + cz;
+                        let delta = -2.0 * energy_at(&self.data, x, y, z, n, k1, k2, h);
+                        if delta <= 0.0 || self.rng.next_f64() < (-delta).exp() {
+                            let idx = bit_index(x, y, z, n);
+                            flip_mask[idx >> 3] ^= 1u8 << (idx & 7);
+                        }
                     }
                 }
             }
-        }
-
-        for (byte, &mask) in self.data.iter_mut().zip(flip_mask.iter()) {
-            *byte ^= mask;
+            for (byte, &mask) in self.data.iter_mut().zip(flip_mask.iter()) {
+                *byte ^= mask;
+            }
         }
     }
 
@@ -481,6 +492,29 @@ mod tests {
         for pixel in rgba.chunks(4) {
             assert_eq!(pixel, &[0xe0, 0xcb, 0x96, 0xff], "wrong color for spin +1");
         }
+    }
+
+    // Sequential sublattice sweep must not produce a 2-cycle.
+    //
+    // Root cause of the old bug: a fully-synchronous sweep (all N³ decisions
+    // based on one pre-sweep snapshot) on a Néel state with FM coupling has
+    // delta < 0 at every site, so Metropolis accepts every flip.  The entire
+    // lattice maps to its complement, which has the identical property, causing
+    // a perpetual 2-cycle.  Sequential sublattice updates break this because
+    // later colour blocks see already-updated neighbours, so their local fields
+    // are no longer uniform.
+    #[test]
+    fn no_two_cycle_from_neel() {
+        let n = 4;
+        let mut lat = SpinLattice::from_bytes(&make_neel(n), n, 42);
+        lat.sublattice_sweep(2.0, 0.0, 0.0);
+        let after_sweep_1 = lat.data.clone();
+        lat.sublattice_sweep(2.0, 0.0, 0.0);
+        lat.sublattice_sweep(2.0, 0.0, 0.0);
+        assert_ne!(
+            lat.data, after_sweep_1,
+            "2-cycle: state after sweep 3 equals state after sweep 1"
+        );
     }
 
     // Neel order param = 1 for perfect Neel state

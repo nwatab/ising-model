@@ -149,8 +149,12 @@ export function useSimulation({
       let didSweep = false;
       if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
         if (wl) {
-          wl.sublattice_sweep(betaJ, betaJ2, betaH);
-          latticeRef.current.set(wl.data()); // sync bytes back to JS lattice
+          try {
+            wl.sublattice_sweep(betaJ, betaJ2, betaH);
+            latticeRef.current.set(wl.data()); // sync bytes back to JS lattice
+          } catch (e) {
+            console.error("[wasm] sweep error:", e);
+          }
         } else {
           // fallback to JS until WASM is loaded
           latticeRef.current = simulateMetropoliseSweepLattice(

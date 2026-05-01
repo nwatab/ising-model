@@ -124,8 +124,8 @@ export default function HistogramPanel({
 
         <text x={PAD_L - 4} y={PAD_T + 4} textAnchor="end" fontSize={8} fill="#9ca3af">freq</text>
 
-        {xLabels?.map(({ x, label }) => (
-          <text key={label} x={x} y={PAD_T + CHART_H + 12} textAnchor="middle" fontSize={8} fill="#9ca3af">
+        {xLabels?.map(({ x, label }, i) => (
+          <text key={i} x={x} y={PAD_T + CHART_H + 12} textAnchor="middle" fontSize={8} fill="#9ca3af">
             {label}
           </text>
         ))}
