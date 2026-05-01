@@ -243,6 +243,33 @@ describe("fitCorrelationLength", () => {
       expect(xi!).toBeCloseTo(Math.sqrt(beta / alpha), 4);
     });
 
+    it("recovers ξ even when Bragg peak at R makes 1/S(R)≈0 (ordered phase)", () => {
+      // In the ordered phase S(R) ≫ S_fluct, so 1/S(R) ≈ 0, much less than the OZ
+      // intercept α = 1/χ. Without the peakIdx-exclusion fix, that anomalously small
+      // point pulls the regression intercept α below zero → null. With the fix, ξ is
+      // recovered from the 8 surrounding points which do follow 1/S = α + β·dk².
+      const alpha = 0.5, beta = 1;
+      const rIdx = steps * 3;
+      const k0 = pathDef[rIdx];
+      const skSum = new Float32Array(nPts).fill(0.001);
+      const WIN = 4;
+      const lo = Math.max(1, rIdx - WIN);
+      const hi = Math.min(nPts - 2, rIdx + WIN);
+      for (let i = lo; i <= hi; i++) {
+        if (i === rIdx) {
+          // Bragg peak: S(R) ≫ S_fluct — 1/S(R) ≈ 0, far below the OZ intercept
+          skSum[i] = 1000;
+        } else {
+          const p = pathDef[i];
+          const dk2 = kFactor * ((p.nx - k0.nx) ** 2 + (p.ny - k0.ny) ** 2 + (p.nz - k0.nz) ** 2);
+          skSum[i] = 1 / (alpha + beta * dk2);
+        }
+      }
+      const xi = fitCorrelationLength(skSum, 1, pathDef, N);
+      expect(xi).not.toBeNull();
+      expect(xi!).toBeCloseTo(Math.sqrt(beta / alpha), 4);
+    });
+
     it("recovers ξ consistently regardless of count (running average)", () => {
       // Accumulating with count=10 should give the same ξ as count=1 with skSum/10
       const alpha = 0.5, beta = 1;

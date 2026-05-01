@@ -77,12 +77,17 @@ export function fitCorrelationLength(
   }
 
   // AFM-like (peak at R or X): fit ±WIN points around peak in k-space.
+  // The peak point itself (dk²=0) is EXCLUDED: in the ordered phase it carries
+  // a Bragg spike (S ∝ N³M²) that dwarfs the fluctuation background, making
+  // 1/S(peak) ≈ 0 and pulling the OZ intercept α below zero. Excluding it
+  // leaves only the fluctuation spectrum, which is what ξ measures.
   const WIN = 4;
   const lo = Math.max(1, peakIdx - WIN);
   const hi = Math.min(nPts - 2, peakIdx + WIN);
   const k0 = pathDef[peakIdx];
   let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, n = 0;
   for (let i = lo; i <= hi; i++) {
+    if (i === peakIdx) continue;
     const s = skSum[i] / count;
     if (!(s > 0)) continue;
     const p = pathDef[i];
