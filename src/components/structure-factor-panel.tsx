@@ -75,6 +75,14 @@ export default function StructureFactorPanel({
           );
         })}
 
+        {/* x-axis label */}
+        <text
+          x={PAD_L + CHART_W + 4} y={PAD_T + CHART_H + 4}
+          textAnchor="start" fontSize={9} fill="#9ca3af" fontStyle="italic"
+        >
+          k
+        </text>
+
         {/* Segment dividers + labels */}
         {segments.map(({ label, idx }) => {
           const x = PAD_L + (idx / (skPath ? skPath.length - 1 : 1)) * CHART_W;
