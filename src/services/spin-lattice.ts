@@ -77,7 +77,10 @@ export class SpinLattice extends BitPackedArray {
   }
 
   randomize(): this {
-    crypto.getRandomValues(this);
+    const CHUNK = 65536;
+    for (let offset = 0; offset < this.byteLength; offset += CHUNK) {
+      crypto.getRandomValues(this.subarray(offset, offset + CHUNK));
+    }
     return this;
   }
   /** in class BitPackedSpinArray */
