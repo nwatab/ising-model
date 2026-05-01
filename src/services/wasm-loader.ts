@@ -27,3 +27,7 @@ export function loadWasm(): Promise<WasmModule> {
   })().catch((e) => { console.error("[wasm] load failed:", e); throw e; });
   return ready;
 }
+
+// Start loading as soon as this module is evaluated in the browser,
+// so the fetch overlaps with React hydration instead of waiting for useEffect.
+if (typeof window !== "undefined") loadWasm();
