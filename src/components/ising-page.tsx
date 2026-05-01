@@ -114,6 +114,8 @@ export function IsingPage({
     energySamples: null,
     magnetizationSamples: null,
     histSamplesFilled: 0,
+    energyStdDev: null,
+    magnetizationStdDev: null,
   });
 
   useSimulation({
@@ -204,6 +206,8 @@ export function IsingPage({
           stripeOrderParam={stats.stripeOrderParam}
           sweeps={stats.sweeps}
           phase={phase}
+          energyStdDev={stats.energyStdDev}
+          magnetizationStdDev={stats.magnetizationStdDev}
         />
       </AccordionSection>
       <AccordionSection

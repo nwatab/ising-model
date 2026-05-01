@@ -10,6 +10,15 @@ const FRAMES_PER_SWEEP = 6; // one full lattice sweep every 6 frames (~10/s at 6
 const SF_SWEEP_INTERVAL = 5; // recompute S(k) path every N sweeps
 const ENERGY_BUFFER_SIZE = 512;
 
+function sampleStdDev(arr: Float32Array, n: number): number {
+  let sum = 0;
+  for (let i = 0; i < n; i++) sum += arr[i];
+  const mean = sum / n;
+  let sq = 0;
+  for (let i = 0; i < n; i++) sq += (arr[i] - mean) ** 2;
+  return Math.sqrt(sq / (n - 1));
+}
+
 // High-symmetry path Γ→X→M→R→Γ on the simple-cubic Brillouin zone.
 // Coordinates are in units of (2π/N), so (N/2) corresponds to k=π.
 export function buildSkPath(N: number): { nx: number; ny: number; nz: number }[] {
@@ -59,6 +68,10 @@ export type SimStats = {
   /** magnetization samples; null until ≥20 */
   magnetizationSamples: Float32Array | null;
   histSamplesFilled: number;
+  /** sample std dev of energy/site; null until ≥20 samples */
+  energyStdDev: number | null;
+  /** sample std dev of magnetization; null until ≥20 samples */
+  magnetizationStdDev: number | null;
 };
 
 export function useSimulation({
@@ -233,6 +246,7 @@ export function useSimulation({
         const last = lastParamsForHistRef.current;
         if (!last || last.betaJ !== betaJ || last.betaJ2 !== betaJ2 || last.betaH !== betaH) {
           histSampleCountRef.current = 0;
+          sweepsRef.current = 0;
           lastParamsForHistRef.current = { betaJ, betaJ2, betaH };
         }
         const pos = histSampleCountRef.current % ENERGY_BUFFER_SIZE;
@@ -255,6 +269,8 @@ export function useSimulation({
         energySamples: filled >= 20 ? energyBufRef.current.slice(0, filled) : null,
         magnetizationSamples: filled >= 20 ? magnetizationBufRef.current.slice(0, filled) : null,
         histSamplesFilled: filled,
+        energyStdDev: filled >= 20 ? sampleStdDev(energyBufRef.current, filled) : null,
+        magnetizationStdDev: filled >= 20 ? sampleStdDev(magnetizationBufRef.current, filled) : null,
       });
 
       animId = requestAnimationFrame(tick);

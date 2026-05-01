@@ -22,6 +22,8 @@ export default function StatisticalInfo({
   stripeOrderParam,
   sweeps,
   phase,
+  energyStdDev,
+  magnetizationStdDev,
 }: {
   energyPerSite: number;
   magnetization: number;
@@ -29,6 +31,8 @@ export default function StatisticalInfo({
   stripeOrderParam: number;
   sweeps: number;
   phase: string;
+  energyStdDev: number | null;
+  magnetizationStdDev: number | null;
 }) {
   return (
     <div className="text-sm space-y-1">
@@ -41,7 +45,10 @@ export default function StatisticalInfo({
         tip={<>E/site = H/(N<sup>3</sup>|J<sub>1</sub>|),{"  "}H = −J<sub>1</sub>Σ<sub>⟨ij⟩</sub>s<sub>i</sub>s<sub>j</sub> − J<sub>2</sub>Σ<sub>⟪ij⟫</sub>s<sub>i</sub>s<sub>j</sub> − hΣs<sub>i</sub></>}
       >
         <span>
-          {energyPerSite.toFixed(4)}{" "}
+          {energyPerSite.toFixed(4)}
+          {energyStdDev !== null && (
+            <span className="text-gray-400"> ± {energyStdDev.toFixed(4)}</span>
+          )}{" "}
           <span className="text-gray-400 text-xs">|J<sub>1</sub>|</span>
         </span>
       </Tip>
@@ -49,7 +56,12 @@ export default function StatisticalInfo({
         label="M:"
         tip={<>M = (1/N<sup>3</sup>) Σ s<sub>i</sub></>}
       >
-        <span>{magnetization.toFixed(4)}</span>
+        <span>
+          {magnetization.toFixed(4)}
+          {magnetizationStdDev !== null && (
+            <span className="text-gray-400"> ± {magnetizationStdDev.toFixed(4)}</span>
+          )}
+        </span>
       </Tip>
       <Tip
         label={<>M<sub>Néel</sub>:</>}
