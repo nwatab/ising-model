@@ -250,24 +250,29 @@ export function useSimulation({
       const energyStdDev = filled >= 20 ? sampleStdDev(energyBufRef.current, filled) : null;
       const magnetizationStdDev = filled >= 20 ? sampleStdDev(magnetizationBufRef.current, filled) : null;
       const spinCount = latticeRef.current.spinCount;
-      const heatCapacity = (isFinite(tStar) && tStar > 0 && energyStdDev !== null)
-        ? spinCount * energyStdDev ** 2 / tStar ** 2
-        : null;
-      const susceptibility = (isFinite(tStar) && tStar > 0 && magnetizationStdDev !== null)
-        ? spinCount * magnetizationStdDev ** 2 / tStar
-        : null;
+      // At T*=∞ all three quantities vanish analytically:
+      // Cv = Nσ²/T*² → 0, χ = Nσ²/T* → 0, ξ → 0 (uncorrelated spins).
+      const heatCapacity = !isFinite(tStar) ? 0
+        : (tStar > 0 && energyStdDev !== null)
+          ? spinCount * energyStdDev ** 2 / tStar ** 2
+          : null;
+      const susceptibility = !isFinite(tStar) ? 0
+        : (tStar > 0 && magnetizationStdDev !== null)
+          ? spinCount * magnetizationStdDev ** 2 / tStar
+          : null;
       const skReady = (
         isFinite(tStar) &&
         skSumCountRef.current >= 10 &&
         skSumBufRef.current !== null &&
         skPathDefRef.current.length > 0
       );
-      const correlationLength = skReady ? fitCorrelationLength(
-        skSumBufRef.current!,
-        skSumCountRef.current,
-        skPathDefRef.current,
-        latticeRef.current.latticeSize
-      ) : null;
+      const correlationLength = !isFinite(tStar) ? 0
+        : skReady ? fitCorrelationLength(
+          skSumBufRef.current!,
+          skSumCountRef.current,
+          skPathDefRef.current,
+          latticeRef.current.latticeSize
+        ) : null;
       const correlationData = skReady ? computeCorrelationData(
         skSumBufRef.current!,
         skSumCountRef.current,
