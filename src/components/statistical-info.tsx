@@ -15,6 +15,12 @@ function Tip({ label, tip, children }: { label: React.ReactNode; tip: React.Reac
   );
 }
 
+function formatWithUncertainty(mean: number, stdev: number): [string, string] {
+  if (stdev <= 0) return [mean.toFixed(4), stdev.toFixed(4)];
+  const decimals = Math.max(0, -Math.floor(Math.log10(stdev)) + 1);
+  return [mean.toFixed(decimals), stdev.toFixed(decimals)];
+}
+
 export default function StatisticalInfo({
   energyPerSite,
   magnetization,
@@ -34,6 +40,13 @@ export default function StatisticalInfo({
   energyStdDev: number | null;
   magnetizationStdDev: number | null;
 }) {
+  const [eMean, eStd] = energyStdDev !== null
+    ? formatWithUncertainty(energyPerSite, energyStdDev)
+    : [energyPerSite.toFixed(4), null];
+  const [mMean, mStd] = magnetizationStdDev !== null
+    ? formatWithUncertainty(magnetization, magnetizationStdDev)
+    : [magnetization.toFixed(4), null];
+
   return (
     <div className="text-sm space-y-1">
       <div className="flex justify-between ml-2">
@@ -41,14 +54,12 @@ export default function StatisticalInfo({
         <span className="text-orange-300">{phase}</span>
       </div>
       <Tip
-        label="E/site:"
-        tip={<>E/site = H/(N<sup>3</sup>|J<sub>1</sub>|),{"  "}H = −J<sub>1</sub>Σ<sub>⟨ij⟩</sub>s<sub>i</sub>s<sub>j</sub> − J<sub>2</sub>Σ<sub>⟪ij⟫</sub>s<sub>i</sub>s<sub>j</sub> − hΣs<sub>i</sub></>}
+        label="ε:"
+        tip={<>ε = H/(N<sup>3</sup>|J<sub>1</sub>|),{"  "}H = −J<sub>1</sub>Σ<sub>⟨ij⟩</sub>s<sub>i</sub>s<sub>j</sub> − J<sub>2</sub>Σ<sub>⟪ij⟫</sub>s<sub>i</sub>s<sub>j</sub> − hΣs<sub>i</sub></>}
       >
         <span>
-          {energyPerSite.toFixed(4)}
-          {energyStdDev !== null && (
-            <span className="text-gray-400"> ± {energyStdDev.toFixed(4)}</span>
-          )}{" "}
+          {eMean}
+          {eStd !== null && <span className="text-gray-400"> ± {eStd}</span>}{" "}
           <span className="text-gray-400 text-xs">|J<sub>1</sub>|</span>
         </span>
       </Tip>
@@ -57,10 +68,8 @@ export default function StatisticalInfo({
         tip={<>M = (1/N<sup>3</sup>) Σ s<sub>i</sub></>}
       >
         <span>
-          {magnetization.toFixed(4)}
-          {magnetizationStdDev !== null && (
-            <span className="text-gray-400"> ± {magnetizationStdDev.toFixed(4)}</span>
-          )}
+          {mMean}
+          {mStd !== null && <span className="text-gray-400"> ± {mStd}</span>}
         </span>
       </Tip>
       <Tip
