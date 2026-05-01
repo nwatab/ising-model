@@ -4,19 +4,20 @@ export function simulateMetropoliseSweepLattice(
   lattice: SpinLattice,
   betaJ: number,
   betaJ2: number,
-  betaH: number
+  betaH: number,
+  rng: () => number = Math.random,
 ) {
   const lat = new SpinLattice(lattice);
   const N = lattice.latticeSize;
   for (let _ = 0; _ < N ** 3; _++) {
-    const x = Math.floor(Math.random() * N);
-    const y = Math.floor(Math.random() * N);
-    const z = Math.floor(Math.random() * N);
+    const x = Math.floor(rng() * N);
+    const y = Math.floor(rng() * N);
+    const z = Math.floor(rng() * N);
     const oldEnergy = lat.energyAt({ x, y, z }, betaJ, betaJ2, betaH);
     lat.flipSpin({ x, y, z });
     const newEnergy = lat.energyAt({ x, y, z }, betaJ, betaJ2, betaH);
     const deltaEnergy = newEnergy - oldEnergy;
-    if (deltaEnergy > 0 && Math.random() > Math.exp(-deltaEnergy)) {
+    if (deltaEnergy > 0 && rng() > Math.exp(-deltaEnergy)) {
       lat.flipSpin({ x, y, z });
     }
   }
@@ -28,10 +29,11 @@ export function simulateMetropolis(
   betaJ: number,
   betaJ2: number,
   betaH: number,
-  sweeps: number
+  sweeps: number,
+  rng: () => number = Math.random,
 ): SpinLattice {
   return Array.from({ length: sweeps }).reduce<SpinLattice>(
-    (acc) => simulateMetropoliseSweepLattice(acc, betaJ, betaJ2, betaH),
+    (acc) => simulateMetropoliseSweepLattice(acc, betaJ, betaJ2, betaH, rng),
     new SpinLattice(lattice)
   );
 }
@@ -44,6 +46,7 @@ export function sublatticeSweepLattice(
   betaJ: number,
   betaJ2: number,
   betaH: number,
+  rng: () => number = Math.random,
 ): SpinLattice {
   const lat = new SpinLattice(lattice);
   const N = lat.latticeSize;
@@ -53,7 +56,7 @@ export function sublatticeSweepLattice(
     for (let y = 0; y < N; y++)
       for (let x = 0; x < N; x++) {
         const delta = -2 * lat.energyAt({ x, y, z }, betaJ, betaJ2, betaH);
-        if (delta <= 0 || Math.random() < Math.exp(-delta))
+        if (delta <= 0 || rng() < Math.exp(-delta))
           toFlip.push({ x, y, z });
       }
 
