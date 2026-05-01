@@ -19,6 +19,35 @@ function sampleStdDev(arr: Float32Array, n: number): number {
   return Math.sqrt(sq / (n - 1));
 }
 
+// Ornstein-Zernike fit: S(k)/N³ = A/(1+ξ²k²) → 1/S = (1/A) + (ξ²/A)k²
+// Uses points 1..steps on the Γ→X segment (excludes Γ itself to avoid Bragg peak).
+// Returns ξ in lattice spacings, or null when the fit is degenerate.
+function fitCorrelationLength(
+  skSum: Float32Array,
+  count: number,
+  pathDef: { nx: number; ny: number; nz: number }[],
+  N: number
+): number | null {
+  const steps = Math.max(4, Math.floor(Math.floor(N / 2) / 2));
+  const kFactor = (2 * Math.PI / N) ** 2;
+  let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, n = 0;
+  for (let i = 1; i <= steps; i++) {
+    const s = skSum[i] / count;
+    if (!(s > 0)) continue;
+    const x = kFactor * pathDef[i].nx ** 2;
+    const y = 1 / s;
+    sumX += x; sumY += y; sumXX += x * x; sumXY += x * y;
+    n++;
+  }
+  if (n < 2) return null;
+  const denom = n * sumXX - sumX * sumX;
+  if (Math.abs(denom) < 1e-30) return null;
+  const alpha = (sumY * sumXX - sumX * sumXY) / denom;
+  const beta  = (n * sumXY - sumX * sumY)  / denom;
+  if (alpha <= 0 || beta <= 0) return null;
+  return Math.sqrt(beta / alpha);
+}
+
 // High-symmetry path Γ→X→M→R→Γ on the simple-cubic Brillouin zone.
 // Coordinates are in units of (2π/N), so (N/2) corresponds to k=π.
 export function buildSkPath(N: number): { nx: number; ny: number; nz: number }[] {
@@ -72,6 +101,12 @@ export type SimStats = {
   energyStdDev: number | null;
   /** sample std dev of magnetization; null until ≥20 samples */
   magnetizationStdDev: number | null;
+  /** specific heat per site: N·σ_ε²/T*²; null until ≥20 samples */
+  heatCapacity: number | null;
+  /** magnetic susceptibility per site: N·σ_m²/T*; null until ≥20 samples */
+  susceptibility: number | null;
+  /** FM correlation length in lattice units from OZ fit near Γ; null until ≥10 S(k) measurements */
+  correlationLength: number | null;
 };
 
 export function useSimulation({
@@ -112,6 +147,8 @@ export function useSimulation({
   const magnetizationBufRef = useRef(new Float32Array(ENERGY_BUFFER_SIZE));
   const histSampleCountRef = useRef(0);
   const lastParamsForHistRef = useRef<{ betaJ: number; betaJ2: number; betaH: number } | null>(null);
+  const skSumBufRef = useRef<Float32Array | null>(null);
+  const skSumCountRef = useRef(0);
 
   paramsRef.current = { betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex };
   runningRef.current = running;
@@ -124,7 +161,10 @@ export function useSimulation({
     skPathRef.current = null;
     skLastComputedSweepRef.current = -1;
     stripeRef.current = 0;
-    skPathDefRef.current = buildSkPath(newLat.latticeSize);
+    const newPathDef = buildSkPath(newLat.latticeSize);
+    skPathDefRef.current = newPathDef;
+    skSumBufRef.current = new Float32Array(newPathDef.length);
+    skSumCountRef.current = 0;
     histSampleCountRef.current = 0;
     lastParamsForHistRef.current = null;
 
@@ -234,6 +274,13 @@ export function useSimulation({
           skPathRef.current = arr;
           stripeRef.current = lat.stripeOrderParam();
         }
+        // Accumulate S(k) running sum for OZ correlation length
+        if (skPathRef.current && skSumBufRef.current) {
+          const path = skPathRef.current;
+          const sum = skSumBufRef.current;
+          for (let i = 0; i < path.length; i++) sum[i] += path[i];
+          skSumCountRef.current++;
+        }
       }
 
       const energyPerSite = isFinite(tStar)
@@ -248,6 +295,8 @@ export function useSimulation({
           histSampleCountRef.current = 0;
           sweepsRef.current = 0;
           lastParamsForHistRef.current = { betaJ, betaJ2, betaH };
+          if (skSumBufRef.current) skSumBufRef.current.fill(0);
+          skSumCountRef.current = 0;
         }
         const pos = histSampleCountRef.current % ENERGY_BUFFER_SIZE;
         energyBufRef.current[pos] = energyPerSite;
@@ -258,6 +307,26 @@ export function useSimulation({
       }
 
       const filled = Math.min(histSampleCountRef.current, ENERGY_BUFFER_SIZE);
+      const energyStdDev = filled >= 20 ? sampleStdDev(energyBufRef.current, filled) : null;
+      const magnetizationStdDev = filled >= 20 ? sampleStdDev(magnetizationBufRef.current, filled) : null;
+      const spinCount = latticeRef.current.spinCount;
+      const heatCapacity = (isFinite(tStar) && tStar > 0 && energyStdDev !== null)
+        ? spinCount * energyStdDev ** 2 / tStar ** 2
+        : null;
+      const susceptibility = (isFinite(tStar) && tStar > 0 && magnetizationStdDev !== null)
+        ? spinCount * magnetizationStdDev ** 2 / tStar
+        : null;
+      const correlationLength = (
+        isFinite(tStar) &&
+        skSumCountRef.current >= 10 &&
+        skSumBufRef.current !== null &&
+        skPathDefRef.current.length > 0
+      ) ? fitCorrelationLength(
+          skSumBufRef.current,
+          skSumCountRef.current,
+          skPathDefRef.current,
+          latticeRef.current.latticeSize
+        ) : null;
 
       onStatsRef.current({
         magnetization: wl ? wl.magnetization() : latticeRef.current.magnetization(),
@@ -269,8 +338,11 @@ export function useSimulation({
         energySamples: filled >= 20 ? energyBufRef.current.slice(0, filled) : null,
         magnetizationSamples: filled >= 20 ? magnetizationBufRef.current.slice(0, filled) : null,
         histSamplesFilled: filled,
-        energyStdDev: filled >= 20 ? sampleStdDev(energyBufRef.current, filled) : null,
-        magnetizationStdDev: filled >= 20 ? sampleStdDev(magnetizationBufRef.current, filled) : null,
+        energyStdDev,
+        magnetizationStdDev,
+        heatCapacity,
+        susceptibility,
+        correlationLength,
       });
 
       animId = requestAnimationFrame(tick);

@@ -21,6 +21,13 @@ function formatWithUncertainty(mean: number, stdev: number): [string, string] {
   return [mean.toFixed(decimals), stdev.toFixed(decimals)];
 }
 
+function fmtNum(x: number): string {
+  if (x >= 9999.5) return `${(x / 1000).toFixed(1)}k`;
+  if (x >= 99.95) return x.toFixed(0);
+  if (x >= 9.995) return x.toFixed(1);
+  return x.toFixed(2);
+}
+
 export default function StatisticalInfo({
   energyPerSite,
   magnetization,
@@ -30,6 +37,10 @@ export default function StatisticalInfo({
   phase,
   energyStdDev,
   magnetizationStdDev,
+  heatCapacity,
+  susceptibility,
+  correlationLength,
+  latticeSize,
 }: {
   energyPerSite: number;
   magnetization: number;
@@ -39,6 +50,10 @@ export default function StatisticalInfo({
   phase: string;
   energyStdDev: number | null;
   magnetizationStdDev: number | null;
+  heatCapacity: number | null;
+  susceptibility: number | null;
+  correlationLength: number | null;
+  latticeSize: number;
 }) {
   const [eMean, eStd] = energyStdDev !== null
     ? formatWithUncertainty(energyPerSite, energyStdDev)
@@ -83,6 +98,30 @@ export default function StatisticalInfo({
         tip={<>M<sub>stripe</sub> = √(max<sub>k</sub> S(k) / N<sup>6</sup>),{"  "}k ∈ X-point</>}
       >
         <span>{(stripeOrderParam ?? 0).toFixed(4)}</span>
+      </Tip>
+      <Tip
+        label={<>C<sub>v</sub>:</>}
+        tip={<>C<sub>v</sub> = N σ<sub>ε</sub>² / T*²{"  "}(specific heat/site, k<sub>B</sub>=1)</>}
+      >
+        <span>{heatCapacity !== null ? fmtNum(heatCapacity) : <span className="text-gray-500">—</span>}</span>
+      </Tip>
+      <Tip
+        label="χ:"
+        tip={<>χ = N σ<sub>m</sub>² / T*{"  "}(susceptibility/site)</>}
+      >
+        <span>{susceptibility !== null ? fmtNum(susceptibility) : <span className="text-gray-500">—</span>}</span>
+      </Tip>
+      <Tip
+        label="ξ:"
+        tip="Correlation length (lattice units) from Ornstein-Zernike fit near Γ. Diverges at Tᶜ."
+      >
+        <span>
+          {correlationLength === null
+            ? <span className="text-gray-500">—</span>
+            : correlationLength > latticeSize / 2
+            ? <span className="text-yellow-400">&gt; L/2</span>
+            : <>{correlationLength.toFixed(2)} <span className="text-gray-400 text-xs">a</span></>}
+        </span>
       </Tip>
       <div className="flex justify-between ml-2">
         <span className="font-medium">Sweeps:</span>

@@ -116,6 +116,9 @@ export function IsingPage({
     histSamplesFilled: 0,
     energyStdDev: null,
     magnetizationStdDev: null,
+    heatCapacity: null,
+    susceptibility: null,
+    correlationLength: null,
   });
 
   useSimulation({
@@ -208,6 +211,10 @@ export function IsingPage({
           phase={phase}
           energyStdDev={stats.energyStdDev}
           magnetizationStdDev={stats.magnetizationStdDev}
+          heatCapacity={stats.heatCapacity}
+          susceptibility={stats.susceptibility}
+          correlationLength={stats.correlationLength}
+          latticeSize={latticeSize}
         />
       </AccordionSection>
       <AccordionSection
