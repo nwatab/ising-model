@@ -4,7 +4,7 @@ import { Suspense } from "react";
 export default function Home() {
   return (
     <Suspense>
-      <IsingPage latticeSize={16} />
+      <IsingPage latticeSize={64} />
     </Suspense>
   );
 }
