@@ -148,18 +148,27 @@ export function useSimulation({
       frameRef.current++;
       let didSweep = false;
       if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
+        const isInfTemp = !isFinite(tStar); // T*=∞ → K₁=K₂=h̃=0 → every Δ=0 → all flip → 2-cycle
         if (wl) {
           try {
-            wl.sublattice_sweep(betaJ, betaJ2, betaH);
-            latticeRef.current.set(wl.data()); // sync bytes back to JS lattice
+            if (isInfTemp) {
+              wl.randomize();
+            } else {
+              wl.sublattice_sweep(betaJ, betaJ2, betaH);
+            }
+            latticeRef.current.set(wl.data());
           } catch (e) {
             console.error("[wasm] sweep error:", e);
           }
         } else {
           // fallback to JS until WASM is loaded
-          latticeRef.current = simulateMetropoliseSweepLattice(
-            latticeRef.current, betaJ, betaJ2, betaH
-          );
+          if (isInfTemp) {
+            latticeRef.current.randomize();
+          } else {
+            latticeRef.current = simulateMetropoliseSweepLattice(
+              latticeRef.current, betaJ, betaJ2, betaH
+            );
+          }
         }
         sweepsRef.current++;
         didSweep = true;

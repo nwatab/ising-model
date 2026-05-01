@@ -565,4 +565,16 @@ mod tests {
         let op = lat.stripe_order_param();
         assert!(op > 0.9, "stripe_order_param layered: got {op}");
     }
+
+
+    #[test]
+    fn no_two_cycle_n16() {
+        let n = 16;
+        let mut lat = SpinLattice::from_bytes(&make_neel(n), n, 0);
+        lat.sublattice_sweep(2.0, 0.0, 0.0);
+        let after1 = lat.data.clone();
+        lat.sublattice_sweep(2.0, 0.0, 0.0);
+        lat.sublattice_sweep(2.0, 0.0, 0.0);
+        assert_ne!(lat.data, after1, "2-cycle for N=16");
+    }
 }
