@@ -180,7 +180,7 @@ export function useSimulation({
         if (ctx) {
           const wl = wasmRef.current;
           const N = latticeRef.current.latticeSize;
-          const pixelsPerSpin = Math.max(2, Math.floor(512 / N));
+          const pixelsPerSpin = Math.max(1, Math.ceil(Math.max(canvas.width, canvas.height) / N));
           const tileSize = pixelsPerSpin * N;
           const axisCode = sliceAxis === "x" ? 0 : sliceAxis === "y" ? 1 : 2;
           const imageData = wl
