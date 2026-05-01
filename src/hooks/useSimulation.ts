@@ -7,7 +7,6 @@ import { loadWasm } from "@/services/wasm-loader";
 import type { WasmLattice } from "@/services/wasm-loader";
 
 const FRAMES_PER_SWEEP = 6; // one full lattice sweep every 6 frames (~10/s at 60 fps)
-const PIXELS_PER_SPIN = 16;
 const SF_SWEEP_INTERVAL = 5; // recompute S(k) path every N sweeps
 const ENERGY_BUFFER_SIZE = 512;
 
@@ -166,9 +165,17 @@ export function useSimulation({
       if (canvas) {
         const ctx = canvas.getContext("2d");
         if (ctx) {
+          const wl = wasmRef.current;
           const N = latticeRef.current.latticeSize;
-          const tileSize = PIXELS_PER_SPIN * N;
-          const imageData = renderSliceToImageData(latticeRef.current, sliceAxis, sliceIndex);
+          const pixelsPerSpin = Math.max(2, Math.floor(512 / N));
+          const tileSize = pixelsPerSpin * N;
+          const axisCode = sliceAxis === "x" ? 0 : sliceAxis === "y" ? 1 : 2;
+          const imageData = wl
+            ? (() => {
+                const rgba = wl.render_slice(axisCode, sliceIndex);
+                return new ImageData(new Uint8ClampedArray(rgba.buffer), N, N);
+              })()
+            : renderSliceToImageData(latticeRef.current, sliceAxis, sliceIndex);
           drawTiledOnCanvas(ctx, imageData, tileSize);
         }
       }

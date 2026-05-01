@@ -84,6 +84,20 @@ export class SpinLattice {
         wasm.spinlattice_randomize(this.__wbg_ptr);
     }
     /**
+     * Returns a flat RGBA byte array (4 bytes per pixel, row-major) for the
+     * N×N slice perpendicular to `axis` at position `index`.
+     * axis: 0=x (yz-plane), 1=y (xz-plane), 2=z (xy-plane)
+     * @param {number} axis
+     * @param {number} index
+     * @returns {Uint8Array}
+     */
+    render_slice(axis, index) {
+        const ret = wasm.spinlattice_render_slice(this.__wbg_ptr, axis, index);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
      * @param {number} k1
      * @param {number} k2
      * @param {number} h
