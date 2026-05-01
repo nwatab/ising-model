@@ -235,6 +235,38 @@ describe("SpinLattice – order parameters", () => {
 
 // -------------------------------------------------------------------------
 
+describe("SpinLattice – structureFactorAt", () => {
+  it("S(0,0,0) for all-up ferro equals N³ (ferromagnetic peak at Γ)", () => {
+    const N = 4;
+    const lat = SpinLattice.createFerro(N);
+    // re = Σ spin × cos(0) = N³, im = Σ spin × sin(0) = 0 → S = N³²/N³ = N³
+    expect(lat.structureFactorAt(0, 0, 0)).toBeCloseTo(N ** 3);
+  });
+
+  it("S(H,H,H) for perfect Néel state equals N³ (AFM peak at R-point)", () => {
+    const N = 4;
+    const H = N / 2; // π/a wavevector index
+    const lat = SpinLattice.createNeel(N);
+    // Phase cos(π(x+y+z)) = (-1)^(x+y+z) = spin at each site → all terms = +1
+    expect(lat.structureFactorAt(H, H, H)).toBeCloseTo(N ** 3);
+  });
+
+  it("S(H,0,0) for perfect layered state equals N³ (stripe peak at X-point)", () => {
+    const N = 4;
+    const H = N / 2;
+    const lat = SpinLattice.createLayered(N);
+    // Layered s = (-1)^x, phase cos(πx) = (-1)^x → all terms = +1
+    expect(lat.structureFactorAt(H, 0, 0)).toBeCloseTo(N ** 3);
+  });
+
+  it("S(0,0,0) for all-up ferro with N=2 equals 8", () => {
+    const lat = SpinLattice.createFerro(2);
+    expect(lat.structureFactorAt(0, 0, 0)).toBeCloseTo(8);
+  });
+});
+
+// -------------------------------------------------------------------------
+
 describe("SpinLattice – energyAt", () => {
   it("all-up lattice: flipping any site raises energy by 12 betaJ (6 NN each contributing 2)", () => {
     const N = 4;
