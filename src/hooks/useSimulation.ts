@@ -58,10 +58,12 @@ function fitCorrelationLength(
   const steps = Math.max(4, Math.floor(Math.floor(N / 2) / 2));
   const kFactor = (2 * Math.PI / N) ** 2;
 
-  // Find peak, excluding index 0 (first Γ) which can be a FM Bragg peak.
+  // Find peak, excluding both Γ endpoints (index 0 and nPts-1 are the same k-point).
+  // Excluding them prevents the FM Bragg peak from hiding the true fluctuation peak,
+  // and prevents the Néel window from touching Γ where S≈0 for multi-domain states.
   let peakIdx = 1;
   let peakVal = skSum[1] / count;
-  for (let i = 2; i < nPts; i++) {
+  for (let i = 2; i < nPts - 1; i++) {
     const v = skSum[i] / count;
     if (v > peakVal) { peakVal = v; peakIdx = i; }
   }
@@ -86,9 +88,10 @@ function fitCorrelationLength(
   }
 
   // AFM-like (peak at R or X): fit ±WIN points around peak in k-space.
+  // hi is clamped to nPts-2 to exclude the final Γ endpoint (S≈0 for multi-domain).
   const WIN = 4;
-  const lo = Math.max(0, peakIdx - WIN);
-  const hi = Math.min(nPts - 1, peakIdx + WIN);
+  const lo = Math.max(1, peakIdx - WIN);
+  const hi = Math.min(nPts - 2, peakIdx + WIN);
   const k0 = pathDef[peakIdx];
   let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, n = 0;
   for (let i = lo; i <= hi; i++) {
