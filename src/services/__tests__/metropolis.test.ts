@@ -71,15 +71,15 @@ describe("sublatticeSweepLattice", () => {
     expect(lat.magnetization()).toBeCloseTo(1);
   });
 
-  it("with J=h=0: all-up flips to all-down (ΔE=0 so every site is accepted)", () => {
-    // When all couplings are zero, energyAt=0 for every site, ΔE=−2×0=0≤0,
-    // so every spin is marked for flipping — a deterministic full-lattice flip.
+  it("T→∞ (betaJ=betaJ2=betaH=0): all-up flips to all-down (ΔE=0 so every site is accepted)", () => {
+    // At infinite temperature K₁=K₂=h̃=0, so energyAt=0 for every site,
+    // ΔE=−2×0=0≤0 — every spin is marked for flipping deterministically.
     const lat = SpinLattice.createFerro(4);
     const result = sublatticeSweepLattice(lat, 0, 0, 0);
     expect(result.magnetization()).toBeCloseTo(-1);
   });
 
-  it("with J=h=0: all-down flips to all-up", () => {
+  it("T→∞: all-down flips to all-up", () => {
     const lat = SpinLattice.createFerro(4);
     // manually set all-down via negating ferro
     for (let z = 0; z < 4; z++)
