@@ -214,6 +214,8 @@ export function useSimulation({
   const lastParamsForHistRef = useRef<{ betaJ: number; betaJ2: number; betaH: number } | null>(null);
   const skSumBufRef = useRef<Float32Array | null>(null);
   const skSumCountRef = useRef(0);
+  const loopActiveRef = useRef(false);
+  const kickRef = useRef<() => void>(() => {});
 
   paramsRef.current = { betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex };
   runningRef.current = running;
@@ -419,10 +421,28 @@ export function useSimulation({
         correlationData,
       });
 
-      animId = requestAnimationFrame(tick);
+      if (runningRef.current) {
+        animId = requestAnimationFrame(tick);
+      } else {
+        loopActiveRef.current = false;
+      }
     };
 
+    kickRef.current = () => {
+      if (!loopActiveRef.current) {
+        loopActiveRef.current = true;
+        animId = requestAnimationFrame(tick);
+      }
+    };
+
+    loopActiveRef.current = true;
     animId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animId);
+    return () => { cancelAnimationFrame(animId); loopActiveRef.current = false; };
   }, []); // intentionally empty — all mutable state accessed via refs
+
+  // Restart loop when simulation resumes.
+  useEffect(() => { if (running) kickRef.current(); }, [running]);
+
+  // Re-render once when the display slice changes while paused.
+  useEffect(() => { kickRef.current(); }, [sliceAxis, sliceIndex]);
 }
