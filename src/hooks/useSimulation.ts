@@ -3,6 +3,8 @@ import { useEffect, useRef } from "react";
 import { SpinLattice } from "@/services/spin-lattice";
 import { simulateMetropoliseSweepLattice } from "@/services/metropolis";
 import { renderSliceToImageData, drawTiledOnCanvas, SliceAxis } from "@/services/canvas-lattice";
+import { loadWasm } from "@/services/wasm-loader";
+import type { WasmLattice } from "@/services/wasm-loader";
 
 const FRAMES_PER_SWEEP = 6; // one full lattice sweep every 6 frames (~10/s at 60 fps)
 const PIXELS_PER_SPIN = 16;
@@ -78,6 +80,7 @@ export function useSimulation({
   onStats: (stats: SimStats) => void;
 }) {
   const latticeRef = useRef<SpinLattice>(new SpinLattice(initialSpins));
+  const wasmRef = useRef<WasmLattice | null>(null);
   const paramsRef = useRef({ betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex });
   const runningRef = useRef(running);
   const onStatsRef = useRef(onStats);
@@ -93,12 +96,22 @@ export function useSimulation({
   onStatsRef.current = onStats;
 
   useEffect(() => {
-    latticeRef.current = new SpinLattice(initialSpins);
+    const newLat = new SpinLattice(initialSpins);
+    latticeRef.current = newLat;
     sweepsRef.current = 0;
     skPathRef.current = null;
     skLastComputedSweepRef.current = -1;
     stripeRef.current = 0;
-    skPathDefRef.current = buildSkPath(latticeRef.current.latticeSize);
+    skPathDefRef.current = buildSkPath(newLat.latticeSize);
+
+    // (Re-)initialize WASM lattice from the new JS bytes.
+    // loadWasm() is cached after the first call.
+    loadWasm().then(({ SpinLattice: W }) => {
+      const bytes = new Uint8Array(newLat);
+      const seed = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER));
+      wasmRef.current?.free();
+      wasmRef.current = W.from_bytes(bytes, newLat.latticeSize, seed);
+    });
   }, [initialSpins]);
 
   // Resize canvas to fill viewport
@@ -122,12 +135,16 @@ export function useSimulation({
 
       frameRef.current++;
       if (runningRef.current && frameRef.current % FRAMES_PER_SWEEP === 0) {
-        latticeRef.current = simulateMetropoliseSweepLattice(
-          latticeRef.current,
-          betaJ,
-          betaJ2,
-          betaH
-        );
+        const wl = wasmRef.current;
+        if (wl) {
+          wl.sublattice_sweep(betaJ, betaJ2, betaH);
+          latticeRef.current.set(wl.data()); // sync bytes back to JS lattice
+        } else {
+          // fallback to JS until WASM is loaded
+          latticeRef.current = simulateMetropoliseSweepLattice(
+            latticeRef.current, betaJ, betaJ2, betaH
+          );
+        }
         sweepsRef.current++;
       }
 
