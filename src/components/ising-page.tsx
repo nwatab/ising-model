@@ -172,37 +172,56 @@ export function IsingPage({
   const tStarForDiagram = isFinite(tStar) ? tStar : 20;
 
   const controlsContent = (
-    <AccordionSection
-      title="Parameters"
-      open={paramsOpen}
-      onToggle={() => setParamsOpen((o) => !o)}
-    >
-      <ConfigSection
-        tStar={tStar}
-        setTStar={setTStar}
-        jSign={jSign}
-        setJSign={setJSign}
-        j2OverJ1={j2OverJ1}
-        setJ2OverJ1={setJ2OverJ1}
-        h={h}
-        setH={setH}
-        sliceAxis={sliceAxis}
-        setSliceAxis={setSliceAxis}
-        sliceIndex={sliceIndex}
-        setSliceIndex={setSliceIndex}
-        latticeSize={latticeSize}
-      />
-      <button
-        onClick={() => setRunning((r) => !r)}
-        className={`w-full py-1.5 rounded text-sm font-semibold transition-colors ${
-          running
-            ? "bg-gray-600 hover:bg-gray-500 text-white"
-            : "bg-orange-600 hover:bg-orange-500 text-white"
-        }`}
+    <div>
+      <AccordionSection
+        title="Parameters"
+        open={paramsOpen}
+        onToggle={() => setParamsOpen((o) => !o)}
       >
-        {running ? "⏸ Pause" : "🔥 Heat"}
-      </button>
-    </AccordionSection>
+        <ConfigSection
+          tStar={tStar}
+          setTStar={setTStar}
+          jSign={jSign}
+          setJSign={setJSign}
+          j2OverJ1={j2OverJ1}
+          setJ2OverJ1={setJ2OverJ1}
+          h={h}
+          setH={setH}
+          sliceAxis={sliceAxis}
+          setSliceAxis={setSliceAxis}
+          sliceIndex={sliceIndex}
+          setSliceIndex={setSliceIndex}
+          latticeSize={latticeSize}
+        />
+        <button
+          onClick={() => setRunning((r) => !r)}
+          className={`w-full py-1.5 rounded text-sm font-semibold transition-colors ${
+            running
+              ? "bg-gray-600 hover:bg-gray-500 text-white"
+              : "bg-orange-600 hover:bg-orange-500 text-white"
+          }`}
+        >
+          {running ? "⏸ Pause" : "🔥 Heat"}
+        </button>
+      </AccordionSection>
+      <AccordionSection
+        title={`Phase Diagram (J₁ ${jSign > 0 ? ">" : "<"} 0)`}
+        open={phaseOpen}
+        onToggle={() => setPhaseOpen((o) => !o)}
+      >
+        <div className={`transition-opacity duration-200 ${h !== 0 ? "opacity-40" : ""}`}>
+          <PhaseDiagramPanel
+            data={phaseDiagramData}
+            jSign={jSign}
+            tStar={tStarForDiagram}
+            j2OverJ1={j2OverJ1}
+          />
+        </div>
+        <p className="text-xs text-gray-500 ml-1 mt-0.5">
+          {h !== 0 ? <>Computed at h = 0 — current h ≠ 0</> : "Computed at h = 0"}
+        </p>
+      </AccordionSection>
+    </div>
   );
 
   const resultsContent = (
@@ -228,18 +247,6 @@ export function IsingPage({
         onToggle={() => setSkOpen((o) => !o)}
       >
         <StructureFactorPanel skPath={stats.skPath} latticeSize={latticeSize} />
-      </AccordionSection>
-      <AccordionSection
-        title={`Phase Diagram  (J₁ ${jSign > 0 ? "> 0" : "< 0"})`}
-        open={phaseOpen}
-        onToggle={() => setPhaseOpen((o) => !o)}
-      >
-        <PhaseDiagramPanel
-          data={phaseDiagramData}
-          jSign={jSign}
-          tStar={tStarForDiagram}
-          j2OverJ1={j2OverJ1}
-        />
       </AccordionSection>
     </div>
   );
