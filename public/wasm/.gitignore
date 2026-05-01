@@ -1,0 +1,3 @@
+# Allow wasm build artifacts to be committed so Vercel can serve them.
+# wasm-pack generates this file with *, but we need these files in git.
+!*
