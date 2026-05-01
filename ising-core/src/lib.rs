@@ -104,6 +104,30 @@ pub struct SpinLattice {
     rng: Rng,
 }
 
+impl SpinLattice {
+    fn structure_factor_impl(&self, nx: usize, ny: usize, nz: usize) -> f64 {
+        let n = self.n;
+        let f = 2.0 * std::f64::consts::PI / n as f64;
+        let cos_lut: Vec<f64> = (0..n).map(|k| (f * k as f64).cos()).collect();
+        let sin_lut: Vec<f64> = (0..n).map(|k| (f * k as f64).sin()).collect();
+        let mut re = 0.0f64;
+        let mut im = 0.0f64;
+        for z in 0..n {
+            let nzz = (nz * z) % n;
+            for y in 0..n {
+                let nynzz = (ny * y + nzz) % n;
+                for x in 0..n {
+                    let spin = get_spin_raw(&self.data, x, y, z, n) as f64;
+                    let k = (nx * x + nynzz) % n;
+                    re += spin * cos_lut[k];
+                    im += spin * sin_lut[k];
+                }
+            }
+        }
+        re * re + im * im
+    }
+}
+
 #[wasm_bindgen]
 impl SpinLattice {
     #[wasm_bindgen(constructor)]
@@ -217,6 +241,89 @@ impl SpinLattice {
             }
         }
         rgba
+    }
+
+    pub fn stripe_order_param(&self) -> f64 {
+        let h = self.n / 2;
+        let n3 = (self.n * self.n * self.n) as f64;
+        let candidates = [
+            (h, 0, 0), (0, h, 0), (0, 0, h),
+            (0, h, h), (h, 0, h), (h, h, 0),
+        ];
+        let max_sf = candidates.iter()
+            .map(|&(nx, ny, nz)| self.structure_factor_impl(nx, ny, nz))
+            .fold(0.0f64, f64::max);
+        (max_sf / n3).sqrt()
+    }
+
+    pub fn beta_energy(&self, k1: f64, k2: f64, h: f64) -> f64 {
+        let n = self.n;
+        let mut e_nn = 0.0f64;
+        let mut e_nnn = 0.0f64;
+        for z in 0..n {
+            for y in 0..n {
+                for x in 0..n {
+                    let xi = x as i64; let yi = y as i64; let zi = z as i64;
+                    let s = get_spin_raw(&self.data, x, y, z, n) as f64;
+                    e_nn -= k1 * s * (
+                        get_spin(&self.data, xi+1, yi, zi, n) as f64 +
+                        get_spin(&self.data, xi, yi+1, zi, n) as f64 +
+                        get_spin(&self.data, xi, yi, zi+1, n) as f64
+                    );
+                    e_nnn -= k2 * s * (
+                        get_spin(&self.data, xi+1, yi+1, zi, n) as f64 +
+                        get_spin(&self.data, xi+1, yi-1, zi, n) as f64 +
+                        get_spin(&self.data, xi+1, yi, zi+1, n) as f64 +
+                        get_spin(&self.data, xi+1, yi, zi-1, n) as f64 +
+                        get_spin(&self.data, xi, yi+1, zi+1, n) as f64 +
+                        get_spin(&self.data, xi, yi+1, zi-1, n) as f64
+                    );
+                }
+            }
+        }
+        let n3 = n * n * n;
+        let full_bytes = n3 / 8;
+        let mut mag_sum = 0i64;
+        for i in 0..full_bytes {
+            mag_sum += 2 * self.data[i].count_ones() as i64 - 8;
+        }
+        let rem = n3 % 8;
+        if rem > 0 {
+            let mask = (1u8 << rem) - 1;
+            mag_sum += 2 * (self.data[full_bytes] & mask).count_ones() as i64 - rem as i64;
+        }
+        e_nn + e_nnn - h * mag_sum as f64
+    }
+
+    pub fn structure_factor_path(&self, nxs: &[i32], nys: &[i32], nzs: &[i32]) -> Vec<u8> {
+        let n = self.n;
+        let n3 = (n * n * n) as f32;
+        let k_len = nxs.len().min(nys.len()).min(nzs.len());
+        let f = (2.0 * std::f64::consts::PI / n as f64) as f32;
+        let cos_lut: Vec<f32> = (0..n).map(|k| (f * k as f32).cos()).collect();
+        let sin_lut: Vec<f32> = (0..n).map(|k| (f * k as f32).sin()).collect();
+        let floats: Vec<f32> = (0..k_len).map(|i| {
+            let nx = nxs[i].rem_euclid(n as i32) as usize;
+            let ny = nys[i].rem_euclid(n as i32) as usize;
+            let nz = nzs[i].rem_euclid(n as i32) as usize;
+            let mut re = 0f32;
+            let mut im = 0f32;
+            for z in 0..n {
+                let nzz = (nz * z) % n;
+                for y in 0..n {
+                    let nynzz = (ny * y + nzz) % n;
+                    for x in 0..n {
+                        let spin = get_spin_raw(&self.data, x, y, z, n) as f32;
+                        let k = (nx * x + nynzz) % n;
+                        re += spin * cos_lut[k];
+                        im += spin * sin_lut[k];
+                    }
+                }
+            }
+            (re * re + im * im) / n3
+        }).collect();
+        // Transmit as raw bytes so wasm-bindgen does not need to know about f32 slices
+        floats.iter().flat_map(|v| v.to_le_bytes()).collect()
     }
 }
 
@@ -393,5 +500,35 @@ mod tests {
         }
         let op = (sum / n3 as f64).abs();
         assert!((op - 1.0).abs() < 1e-10, "neel_op={op}");
+    }
+
+    #[test]
+    fn beta_energy_ferro() {
+        let n = 4;
+        let data = make_ferro(n);
+        let lat = SpinLattice::from_bytes(&data, n, 42);
+        let e = lat.beta_energy(1.0, 0.0, 0.0);
+        let expected = -3.0 * (n * n * n) as f64;
+        assert!((e - expected).abs() < 1e-9, "beta_energy ferro: got {e}, expected {expected}");
+    }
+
+    #[test]
+    fn stripe_order_param_layered() {
+        // Layered state s(x,y,z) = (-1)^x should have high stripe order
+        let n = 4;
+        let mut data = vec![0u8; (n * n * n + 7) / 8];
+        for z in 0..n {
+            for y in 0..n {
+                for x in 0..n {
+                    if x % 2 == 0 {
+                        let idx = bit_index(x, y, z, n);
+                        data[idx >> 3] |= 1u8 << (idx & 7);
+                    }
+                }
+            }
+        }
+        let lat = SpinLattice::from_bytes(&data, n, 42);
+        let op = lat.stripe_order_param();
+        assert!(op > 0.9, "stripe_order_param layered: got {op}");
     }
 }
