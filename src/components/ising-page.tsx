@@ -24,6 +24,9 @@ function inferPhase(
 
   // S(k) peak-position fallback: catches multi-domain ordered phases where
   // global order parameters cancel but the Bragg peak is clearly visible.
+  // Requires S(k_peak) > N³·(0.03)² so random noise at T*=∞ (where S(k)≈1
+  // per mode) never triggers. WASM returns S(k)=|Σ sᵢe^{ik·r}|²/N³, so the
+  // threshold equals the signal from an effective order parameter of ~3%.
   if (skPath && skPath.length > 0) {
     const segs = skPathSegments(latticeSize);
     const idxX = segs.find(s => s.label === "X")?.idx ?? -1;
@@ -32,6 +35,9 @@ function inferPhase(
     for (let i = 1; i < skPath.length; i++) {
       if (skPath[i] > skPath[peakIdx]) peakIdx = i;
     }
+    const N3 = latticeSize ** 3;
+    const minOrderedPeak = N3 * 0.0009; // = N³ · (0.03)²
+    if (skPath[peakIdx] < minOrderedPeak) return "Paramagnetic";
     const half = Math.max(2, Math.floor(Math.floor(latticeSize / 2) / 4));
     if (idxR >= 0 && Math.abs(peakIdx - idxR) <= half) return "Néel Antiferromagnetic";
     if (idxX >= 0 && Math.abs(peakIdx - idxX) <= half) return "Striped Antiferromagnetic";
