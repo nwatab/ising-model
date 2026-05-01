@@ -245,6 +245,7 @@ export function IsingPage({
           samplesFilled={stats.histSamplesFilled}
           xLabel="M"
           barColor="#34d399"
+          xDomain={[-1.05, 1.05]}
         />
       </AccordionSection>
     </div>

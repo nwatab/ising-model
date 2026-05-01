@@ -10,7 +10,7 @@ const PAD_B = 24;
 const CHART_W = PANEL_W - PAD_L - PAD_R;
 const N_BINS = 20;
 
-function buildHistogram(samples: Float32Array) {
+function buildHistogram(samples: Float32Array, xDomain?: [number, number]) {
   let sum = 0;
   let min = Infinity;
   let max = -Infinity;
@@ -25,9 +25,14 @@ function buildHistogram(samples: Float32Array) {
   for (let i = 0; i < samples.length; i++) variance += (samples[i] - mean) ** 2;
   const std = Math.sqrt(variance / samples.length);
 
-  const pad = std * 0.5 || Math.abs(max - min) * 0.1 || 0.1;
-  const lo = min - pad;
-  const hi = max + pad;
+  let lo: number, hi: number;
+  if (xDomain) {
+    [lo, hi] = xDomain;
+  } else {
+    const pad = std * 0.5 || Math.abs(max - min) * 0.1 || 0.1;
+    lo = min - pad;
+    hi = max + pad;
+  }
   const binWidth = (hi - lo) / N_BINS;
 
   const bins = new Array<number>(N_BINS).fill(0);
@@ -45,18 +50,20 @@ export default function HistogramPanel({
   xLabel,
   barColor,
   showGaussian = false,
+  xDomain,
 }: {
   samples: Float32Array | null;
   samplesFilled: number;
   xLabel: string;
   barColor: string;
   showGaussian?: boolean;
+  xDomain?: [number, number];
 }) {
   const viewH = CHART_H + PAD_T + PAD_B;
 
   const hist = useMemo(
-    () => (samples ? buildHistogram(samples) : null),
-    [samples]
+    () => (samples ? buildHistogram(samples, xDomain) : null),
+    [samples, xDomain]
   );
 
   const bars = useMemo(() => {
