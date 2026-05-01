@@ -205,7 +205,7 @@ export function IsingPage({
         </button>
       </AccordionSection>
       <AccordionSection
-        title={`Phase Diagram (J₁ ${jSign > 0 ? ">" : "<"} 0)`}
+        title={`Phase Diagram (J₁ ${jSign > 0 ? ">" : "<"} 0, h=0)`}
         open={phaseOpen}
         onToggle={() => setPhaseOpen((o) => !o)}
       >
@@ -217,9 +217,6 @@ export function IsingPage({
             j2OverJ1={j2OverJ1}
           />
         </div>
-        <p className="text-xs text-gray-500 ml-1 mt-0.5">
-          {h !== 0 ? <>Computed at h = 0 — current h ≠ 0</> : "Computed at h = 0"}
-        </p>
       </AccordionSection>
     </div>
   );

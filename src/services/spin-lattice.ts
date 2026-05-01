@@ -87,13 +87,16 @@ export class SpinLattice extends BitPackedArray {
   }
   /** in class BitPackedSpinArray */
   bitIndex({ x, y, z }: Coord3D): number {
-    // wrap each coord into [0, N):
     const xp = ((x % this.N) + this.N) % this.N;
     const yp = ((y % this.N) + this.N) % this.N;
     const zp = ((z % this.N) + this.N) % this.N;
 
-    // now compute the 1D bit index
-    return xp + this.N * yp + this.N * this.N * zp;
+    // Color-sorted layout: sites grouped by sublattice color (x%2, y%2, z%2).
+    // Within each color block, sites are ordered by (x>>1, y>>1, z>>1).
+    // This makes each color's bits contiguous — enabling lock-free parallel writes per color.
+    const color = ((xp & 1) << 2) | ((yp & 1) << 1) | (zp & 1);
+    const M = this.N >> 1; // N/2
+    return color * M * M * M + (xp >> 1) + M * (yp >> 1) + M * M * (zp >> 1);
   }
 
   /** get a spin at a coordinate（+1 or -1） */
@@ -180,16 +183,12 @@ export class SpinLattice extends BitPackedArray {
   neelOrderParam(): number {
     const N = this.N;
     let sum = 0;
-    let idx = 0;
-    for (let z = 0; z < N; z++) {
-      for (let y = 0; y < N; y++) {
-        for (let x = 0; x < N; x++, idx++) {
-          const spin = (this[idx >> 3] >> (idx & 7)) & 1 ? 1 : -1;
+    for (let z = 0; z < N; z++)
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++) {
           const sign = ((x + y + z) & 1) === 0 ? 1 : -1;
-          sum += sign * spin;
+          sum += sign * this.getSpin({ x, y, z });
         }
-      }
-    }
     return sum / this.spinCount;
   }
 
@@ -225,13 +224,12 @@ export class SpinLattice extends BitPackedArray {
     const cosLUT = this._cosLUT ?? (this._cosLUT = this._buildLUT(true));
     const sinLUT = this._sinLUT ?? (this._sinLUT = this._buildLUT(false));
     let re = 0, im = 0;
-    let idx = 0;
     for (let z = 0; z < N; z++) {
       const nzz = (nz * z) % N;
       for (let y = 0; y < N; y++) {
         const nyyNzz = (ny * y + nzz) % N;
-        for (let x = 0; x < N; x++, idx++) {
-          const spin = (this[idx >> 3] >> (idx & 7)) & 1 ? 1 : -1;
+        for (let x = 0; x < N; x++) {
+          const spin = this.getSpin({ x, y, z });
           const k = (nx * x + nyyNzz) % N;
           re += spin * cosLUT[k];
           im += spin * sinLUT[k];
@@ -254,49 +252,29 @@ export class SpinLattice extends BitPackedArray {
 
   betaEnergy(betaJ: number, betaJ2: number, betaH: number): number {
     const N = this.N;
-    const N2 = N * N;
     let E_nn = 0;
     let E_nnn = 0;
-    let idx = 0;
 
     for (let z = 0; z < N; z++) {
       for (let y = 0; y < N; y++) {
-        for (let x = 0; x < N; x++, idx++) {
-          const s = (this[idx >> 3] >> (idx & 7)) & 1 ? 1 : -1;
+        for (let x = 0; x < N; x++) {
+          const s = this.getSpin({ x, y, z });
 
-          // nearest-neighbour pairs in +x, +y, +z directions
-          const idxX = x < N - 1 ? idx + 1 : idx - (N - 1);
-          const idxY = y < N - 1 ? idx + N : idx - N * (N - 1);
-          const idxZ = z < N - 1 ? idx + N2 : idx - N2 * (N - 1);
+          // NN: count each bond once via +x, +y, +z directions
           E_nn -= betaJ * s * (
-            ((this[idxX >> 3] >> (idxX & 7)) & 1 ? 1 : -1) +
-            ((this[idxY >> 3] >> (idxY & 7)) & 1 ? 1 : -1) +
-            ((this[idxZ >> 3] >> (idxZ & 7)) & 1 ? 1 : -1)
+            this.getSpin({ x: x + 1, y, z }) +
+            this.getSpin({ x, y: y + 1, z }) +
+            this.getSpin({ x, y, z: z + 1 })
           );
 
-          // next-nearest-neighbour pairs: 6 face-diagonal directions
-          // (+x+y,0), (+x-y,0), (+x,0,+z), (+x,0,-z), (0,+y+z), (0,+y-z)
-          const xp = x < N - 1 ? x + 1 : 0;
-          const xm = x > 0 ? x - 1 : N - 1;
-          const yp = y < N - 1 ? y + 1 : 0;
-          const ym = y > 0 ? y - 1 : N - 1;
-          const zp = z < N - 1 ? z + 1 : 0;
-          const zm = z > 0 ? z - 1 : N - 1;
-
-          const i_xpyp = xp + N * yp + N2 * z;
-          const i_xpym = xp + N * ym + N2 * z;
-          const i_xpzp = xp + N * y  + N2 * zp;
-          const i_xpzm = xp + N * y  + N2 * zm;
-          const i_ypzp = x  + N * yp + N2 * zp;
-          const i_ypzm = x  + N * yp + N2 * zm;
-
+          // NNN: 6 face-diagonal half-directions, each bond counted once
           E_nnn -= betaJ2 * s * (
-            ((this[i_xpyp >> 3] >> (i_xpyp & 7)) & 1 ? 1 : -1) +
-            ((this[i_xpym >> 3] >> (i_xpym & 7)) & 1 ? 1 : -1) +
-            ((this[i_xpzp >> 3] >> (i_xpzp & 7)) & 1 ? 1 : -1) +
-            ((this[i_xpzm >> 3] >> (i_xpzm & 7)) & 1 ? 1 : -1) +
-            ((this[i_ypzp >> 3] >> (i_ypzp & 7)) & 1 ? 1 : -1) +
-            ((this[i_ypzm >> 3] >> (i_ypzm & 7)) & 1 ? 1 : -1)
+            this.getSpin({ x: x + 1, y: y + 1, z }) +
+            this.getSpin({ x: x + 1, y: y - 1, z }) +
+            this.getSpin({ x: x + 1, y, z: z + 1 }) +
+            this.getSpin({ x: x + 1, y, z: z - 1 }) +
+            this.getSpin({ x, y: y + 1, z: z + 1 }) +
+            this.getSpin({ x, y: y + 1, z: z - 1 })
           );
         }
       }

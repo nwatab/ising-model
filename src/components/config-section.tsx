@@ -107,7 +107,7 @@ export default function ConfigSection({
             T<sup>*</sup>
             <span className="ml-0.5 text-blue-400 text-xs align-middle">ⓘ</span>
             <span className="pointer-events-none absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1 rounded whitespace-nowrap z-50 font-normal">
-              k<sub>B</sub>T / |J<sub>1</sub>| — reduced temperature; T*<sub>c</sub> ≈ 4.51
+              T* = k<sub>B</sub>T / |J<sub>1</sub>|; T*<sub>c</sub> ≈ 4.51
             </span>
           </span>
           <span>= <span className="font-mono">{isInf ? "∞" : tStar.toFixed(2)}</span></span>

@@ -36,28 +36,30 @@ export default function StatisticalInfo({
         <span className="font-medium">Phase:</span>
         <span className="text-orange-300">{phase}</span>
       </div>
-      <div className="flex justify-between ml-2">
-        <span className="font-medium">Energy per site:</span>
+      <Tip
+        label="E/site:"
+        tip={<>E/site = H/(N<sup>3</sup>|J<sub>1</sub>|),{"  "}H = −J<sub>1</sub>Σ<sub>⟨ij⟩</sub>s<sub>i</sub>s<sub>j</sub> − J<sub>2</sub>Σ<sub>⟪ij⟫</sub>s<sub>i</sub>s<sub>j</sub> − hΣs<sub>i</sub></>}
+      >
         <span>
           {energyPerSite.toFixed(4)}{" "}
           <span className="text-gray-400 text-xs">|J<sub>1</sub>|</span>
         </span>
-      </div>
+      </Tip>
       <Tip
         label="M:"
-        tip={<>(1/N<sup>3</sup>) Σ s<sub>i</sub></>}
+        tip={<>M = (1/N<sup>3</sup>) Σ s<sub>i</sub></>}
       >
         <span>{magnetization.toFixed(4)}</span>
       </Tip>
       <Tip
         label={<>M<sub>Néel</sub>:</>}
-        tip={<>(1/N<sup>3</sup>) Σ s<sub>i</sub>(−1)<sup>x<sub>i</sub>+y<sub>i</sub>+z<sub>i</sub></sup></>}
+        tip={<>M<sub>Néel</sub> = (1/N<sup>3</sup>) Σ s<sub>i</sub>(−1)<sup>x<sub>i</sub>+y<sub>i</sub>+z<sub>i</sub></sup></>}
       >
         <span>{(neelOrderParam ?? 0).toFixed(4)}</span>
       </Tip>
       <Tip
         label={<>M<sub>stripe</sub>:</>}
-        tip={<>√(max<sub>k</sub> S(k) / N<sup>6</sup>),{"  "}k ∈ X-point</>}
+        tip={<>M<sub>stripe</sub> = √(max<sub>k</sub> S(k) / N<sup>6</sup>),{"  "}k ∈ X-point</>}
       >
         <span>{(stripeOrderParam ?? 0).toFixed(4)}</span>
       </Tip>
