@@ -43,8 +43,10 @@ function computeCorrelationData(
   return result;
 }
 
-// Ornstein-Zernike fit: S(k)/N³ = A/(1+ξ²k²) → 1/S = (1/A) + (ξ²/A)k²
-// Uses points 1..steps on the Γ→X segment (excludes Γ itself to avoid Bragg peak).
+// Ornstein-Zernike fit around the S(k) peak: 1/S(k) = α + β·|k−k₀|²  →  ξ = √(β/α).
+// Finds the peak in the interior of the path (skips Γ endpoints), then fits ±WIN points.
+// For FM (peak at or near Γ, index ≤1): falls back to the Γ→X small-k OZ fit instead,
+// because index 0 can be a Bragg peak in the ordered phase.
 // Returns ξ in lattice spacings, or null when the fit is degenerate.
 function fitCorrelationLength(
   skSum: Float32Array,
@@ -52,16 +54,50 @@ function fitCorrelationLength(
   pathDef: { nx: number; ny: number; nz: number }[],
   N: number
 ): number | null {
+  const nPts = pathDef.length;
   const steps = Math.max(4, Math.floor(Math.floor(N / 2) / 2));
   const kFactor = (2 * Math.PI / N) ** 2;
+
+  // Find peak, excluding index 0 (first Γ) which can be a FM Bragg peak.
+  let peakIdx = 1;
+  let peakVal = skSum[1] / count;
+  for (let i = 2; i < nPts; i++) {
+    const v = skSum[i] / count;
+    if (v > peakVal) { peakVal = v; peakIdx = i; }
+  }
+
+  if (peakIdx <= 1) {
+    // FM-like: peak is right at/near Γ. Use small-k OZ fit on Γ→X (indices 1..steps).
+    let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, n = 0;
+    for (let i = 1; i <= steps; i++) {
+      const s = skSum[i] / count;
+      if (!(s > 0)) continue;
+      const x = kFactor * pathDef[i].nx ** 2;
+      const y = 1 / s;
+      sumX += x; sumY += y; sumXX += x * x; sumXY += x * y; n++;
+    }
+    if (n < 2) return null;
+    const denom = n * sumXX - sumX * sumX;
+    if (Math.abs(denom) < 1e-30) return null;
+    const alpha = (sumY * sumXX - sumX * sumXY) / denom;
+    const beta  = (n * sumXY - sumX * sumY)  / denom;
+    if (alpha <= 0 || beta <= 0) return null;
+    return Math.sqrt(beta / alpha);
+  }
+
+  // AFM-like (peak at R or X): fit ±WIN points around peak in k-space.
+  const WIN = 4;
+  const lo = Math.max(0, peakIdx - WIN);
+  const hi = Math.min(nPts - 1, peakIdx + WIN);
+  const k0 = pathDef[peakIdx];
   let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, n = 0;
-  for (let i = 1; i <= steps; i++) {
+  for (let i = lo; i <= hi; i++) {
     const s = skSum[i] / count;
     if (!(s > 0)) continue;
-    const x = kFactor * pathDef[i].nx ** 2;
+    const p = pathDef[i];
+    const dk2 = kFactor * ((p.nx - k0.nx) ** 2 + (p.ny - k0.ny) ** 2 + (p.nz - k0.nz) ** 2);
     const y = 1 / s;
-    sumX += x; sumY += y; sumXX += x * x; sumXY += x * y;
-    n++;
+    sumX += dk2; sumY += y; sumXX += dk2 * dk2; sumXY += dk2 * y; n++;
   }
   if (n < 2) return null;
   const denom = n * sumXX - sumX * sumX;
@@ -287,7 +323,8 @@ export function useSimulation({
           const nzArr = new Int32Array(path.map(p => p.nz));
           const raw = wl.structure_factor_path(nxArr, nyArr, nzArr);
           skPathRef.current = new Float32Array(raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength));
-          stripeRef.current = wl.stripe_order_param();
+          // WASM returns sqrt(max_sf/N³) = |Σ|/N^(3/2); divide by sqrt(N³) to get |Σ|/N³.
+          stripeRef.current = wl.stripe_order_param() / Math.sqrt(latticeRef.current.spinCount);
         } else {
           const path = skPathDefRef.current;
           const arr = new Float32Array(path.length);

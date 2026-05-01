@@ -1,7 +1,7 @@
 "use client";
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { useSimulation, SimStats } from "@/hooks/useSimulation";
+import { useSimulation, SimStats, skPathSegments } from "@/hooks/useSimulation";
 import { T_STAR_CRITICAL } from "@/constants";
 import ConfigSection from "./config-section";
 import StatisticalInfo from "./statistical-info";
@@ -14,10 +14,29 @@ import type { SliceAxis } from "@/services/canvas-lattice";
 import type { PhaseDiagramData } from "@/types";
 import phaseDiagramRaw from "@/data/phase-diagram.json";
 
-function inferPhase(M: number, mNeel: number, mStripe: number, jSign: 1 | -1): string {
+function inferPhase(
+  M: number, mNeel: number, mStripe: number, jSign: 1 | -1,
+  skPath: Float32Array | null, latticeSize: number,
+): string {
   if (Math.abs(M) > 0.15) return jSign > 0 ? "Ferromagnetic" : "Antiferromagnetic";
   if (Math.abs(mNeel) > 0.15) return "Néel Antiferromagnetic";
   if (mStripe > 0.15) return "Striped Antiferromagnetic";
+
+  // S(k) peak-position fallback: catches multi-domain ordered phases where
+  // global order parameters cancel but the Bragg peak is clearly visible.
+  if (skPath && skPath.length > 0) {
+    const segs = skPathSegments(latticeSize);
+    const idxX = segs.find(s => s.label === "X")?.idx ?? -1;
+    const idxR = segs.find(s => s.label === "R")?.idx ?? -1;
+    let peakIdx = 0;
+    for (let i = 1; i < skPath.length; i++) {
+      if (skPath[i] > skPath[peakIdx]) peakIdx = i;
+    }
+    const half = Math.max(2, Math.floor(Math.floor(latticeSize / 2) / 4));
+    if (idxR >= 0 && Math.abs(peakIdx - idxR) <= half) return "Néel Antiferromagnetic";
+    if (idxX >= 0 && Math.abs(peakIdx - idxX) <= half) return "Striped Antiferromagnetic";
+  }
+
   return "Paramagnetic";
 }
 
@@ -137,7 +156,7 @@ export function IsingPage({
     onStats: setStats,
   });
 
-  const phase = inferPhase(stats.magnetization, stats.neelOrderParam, stats.stripeOrderParam, jSign);
+  const phase = inferPhase(stats.magnetization, stats.neelOrderParam, stats.stripeOrderParam, jSign, stats.skPath, latticeSize);
   const tStarForDiagram = isFinite(tStar) ? tStar : 20;
 
   const controlsContent = (
