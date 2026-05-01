@@ -188,6 +188,36 @@ impl SpinLattice {
 
     /// Raw bitpacked bytes (color-sorted layout), for copying to JS.
     pub fn data(&self) -> Vec<u8> { self.data.clone() }
+
+    /// Returns a flat RGBA byte array (4 bytes per pixel, row-major) for the
+    /// N×N slice perpendicular to `axis` at position `index`.
+    /// axis: 0=x (yz-plane), 1=y (xz-plane), 2=z (xy-plane)
+    pub fn render_slice(&self, axis: u8, index: usize) -> Vec<u8> {
+        let n = self.n;
+        let mut rgba = vec![0u8; n * n * 4];
+        for v in 0..n {
+            for u in 0..n {
+                let (x, y, z) = match axis {
+                    0 => (index, u, v),
+                    1 => (u, index, v),
+                    _ => (u, v, index),
+                };
+                let spin = get_spin_raw(&self.data, x, y, z, n);
+                let i = (v * n + u) * 4;
+                if spin > 0 {
+                    rgba[i]     = 0xe0;
+                    rgba[i + 1] = 0xcb;
+                    rgba[i + 2] = 0x96;
+                } else {
+                    rgba[i]     = 0x31;
+                    rgba[i + 1] = 0x34;
+                    rgba[i + 2] = 0x38;
+                }
+                rgba[i + 3] = 255;
+            }
+        }
+        rgba
+    }
 }
 
 // ── Rust unit tests ──────────────────────────────────────────────────────────
@@ -331,6 +361,19 @@ mod tests {
         assert_eq!(get_spin(&data, -1, 0, 0, n), -1, "-1 mod 4 = 3");
         // unflipped site still +1
         assert_eq!(get_spin(&data,  1, 0, 0, n),  1, "(1,0,0) untouched");
+    }
+
+    #[test]
+    fn render_slice_ferro_colors() {
+        let n = 4;
+        let data = make_ferro(n);
+        let lat = SpinLattice::from_bytes(&data, n, 42);
+        let rgba = lat.render_slice(2, 0); // z-slice at index 0
+        assert_eq!(rgba.len(), n * n * 4);
+        // All spins +1 → warm yellow (0xe0, 0xcb, 0x96, 0xff)
+        for pixel in rgba.chunks(4) {
+            assert_eq!(pixel, &[0xe0, 0xcb, 0x96, 0xff], "wrong color for spin +1");
+        }
     }
 
     // Neel order param = 1 for perfect Neel state

@@ -15,6 +15,12 @@ export class SpinLattice {
     neel_order_param(): number;
     constructor(n: number, seed: bigint);
     randomize(): void;
+    /**
+     * Returns a flat RGBA byte array (4 bytes per pixel, row-major) for the
+     * N×N slice perpendicular to `axis` at position `index`.
+     * axis: 0=x (yz-plane), 1=y (xz-plane), 2=z (xy-plane)
+     */
+    render_slice(axis: number, index: number): Uint8Array;
     sublattice_sweep(k1: number, k2: number, h: number): void;
 }
 
@@ -31,6 +37,7 @@ export interface InitOutput {
     readonly spinlattice_neel_order_param: (a: number) => number;
     readonly spinlattice_new: (a: number, b: bigint) => number;
     readonly spinlattice_randomize: (a: number) => void;
+    readonly spinlattice_render_slice: (a: number, b: number, c: number) => [number, number];
     readonly spinlattice_sublattice_sweep: (a: number, b: number, c: number, d: number) => void;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
