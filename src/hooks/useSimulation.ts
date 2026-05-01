@@ -67,6 +67,12 @@ function fitCorrelationLength(
     const v = skSum[i] / count;
     if (v > peakVal) { peakVal = v; peakIdx = i; }
   }
+  // one-shot diagnostics: print the 4 highest skSum entries
+  if (peakIdx > 1) {
+    const top = Array.from({length: nPts - 2}, (_, i) => ({i: i+1, v: skSum[i+1]/count}))
+      .sort((a, b) => b.v - a.v).slice(0, 5);
+    console.log("[ξ peak]", top.map(({i,v}) => `[${i}]=${v.toExponential(3)}`).join(" "), {N, steps, nPts, peakVal: peakVal.toExponential(3), k0: pathDef[peakIdx]});
+  }
 
   if (peakIdx <= 1) {
     // FM-like: peak is right at/near Γ. Use small-k OZ fit on Γ→X (indices 1..steps).
@@ -102,12 +108,11 @@ function fitCorrelationLength(
     const y = 1 / s;
     sumX += dk2; sumY += y; sumXX += dk2 * dk2; sumXY += dk2 * y; n++;
   }
-  if (n < 2) { console.log("[ξ] AFM n<2", {peakIdx, lo, hi, n}); return null; }
+  if (n < 2) return null;
   const denom = n * sumXX - sumX * sumX;
-  if (Math.abs(denom) < 1e-30) { console.log("[ξ] AFM denom≈0", {denom}); return null; }
+  if (Math.abs(denom) < 1e-30) return null;
   const alpha = (sumY * sumXX - sumX * sumXY) / denom;
   const beta  = (n * sumXY - sumX * sumY)  / denom;
-  console.log("[ξ] AFM", {peakIdx, n, alpha, beta, xi: alpha>0&&beta>0 ? Math.sqrt(beta/alpha) : null});
   if (alpha <= 0 || beta <= 0) return null;
   return Math.sqrt(beta / alpha);
 }
