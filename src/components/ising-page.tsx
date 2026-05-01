@@ -239,7 +239,7 @@ export function IsingPage({
       </AccordionSection>
       <AccordionSection
         title="S(k)"
-        tip={<>S(k) = (1/N<sup>3</sup>)|Σ s<sub>i</sub> e<sup>ik·r<sub>i</sub></sup>|<sup>2</sup> along Γ→X→M→R→Γ</>}
+        tip={<>S(k) = (1/N<sup>3</sup>)|Σ s<sub>i</sub> e<sup>ik·r<sub>i</sub></sup>|<sup>2</sup></>}
         open={skOpen}
         onToggle={() => setSkOpen((o) => !o)}
       >
