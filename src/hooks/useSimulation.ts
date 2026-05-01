@@ -55,8 +55,11 @@ export type SimStats = {
   stripeOrderParam: number; // max_α sqrt(S(k_α)/N³) — detects layered phase
   /** S(k)/N³ along Γ→X→M→R→Γ; null until first measurement */
   skPath: Float32Array | null;
-  /** energy/site samples collected since last parameter change; null until ≥50 */
+  /** energy/site samples; null until ≥20 */
   energySamples: Float32Array | null;
+  /** magnetization samples; null until ≥20 */
+  magnetizationSamples: Float32Array | null;
+  histSamplesFilled: number;
 };
 
 export function useSimulation({
@@ -94,7 +97,8 @@ export function useSimulation({
   const skLastComputedSweepRef = useRef(-1);
   const stripeRef = useRef<number>(0);
   const energyBufRef = useRef(new Float32Array(ENERGY_BUFFER_SIZE));
-  const energySampleCountRef = useRef(0);
+  const magnetizationBufRef = useRef(new Float32Array(ENERGY_BUFFER_SIZE));
+  const histSampleCountRef = useRef(0);
   const lastParamsForHistRef = useRef<{ betaJ: number; betaJ2: number; betaH: number } | null>(null);
 
   paramsRef.current = { betaJ, betaJ2, betaH, tStar, sliceAxis, sliceIndex };
@@ -109,7 +113,7 @@ export function useSimulation({
     skLastComputedSweepRef.current = -1;
     stripeRef.current = 0;
     skPathDefRef.current = buildSkPath(newLat.latticeSize);
-    energySampleCountRef.current = 0;
+    histSampleCountRef.current = 0;
     lastParamsForHistRef.current = null;
 
     // (Re-)initialize WASM lattice from the new JS bytes.
@@ -196,14 +200,16 @@ export function useSimulation({
       if (didSweep && isFinite(tStar)) {
         const last = lastParamsForHistRef.current;
         if (!last || last.betaJ !== betaJ || last.betaJ2 !== betaJ2 || last.betaH !== betaH) {
-          energySampleCountRef.current = 0;
+          histSampleCountRef.current = 0;
           lastParamsForHistRef.current = { betaJ, betaJ2, betaH };
         }
-        energyBufRef.current[energySampleCountRef.current % ENERGY_BUFFER_SIZE] = energyPerSite;
-        energySampleCountRef.current++;
+        const pos = histSampleCountRef.current % ENERGY_BUFFER_SIZE;
+        energyBufRef.current[pos] = energyPerSite;
+        magnetizationBufRef.current[pos] = latticeRef.current.magnetization();
+        histSampleCountRef.current++;
       }
 
-      const filled = Math.min(energySampleCountRef.current, ENERGY_BUFFER_SIZE);
+      const filled = Math.min(histSampleCountRef.current, ENERGY_BUFFER_SIZE);
 
       onStatsRef.current({
         magnetization: latticeRef.current.magnetization(),
@@ -212,7 +218,9 @@ export function useSimulation({
         neelOrderParam: latticeRef.current.neelOrderParam(),
         stripeOrderParam: stripeRef.current,
         skPath: skPathRef.current,
-        energySamples: filled >= 50 ? energyBufRef.current.slice(0, filled) : null,
+        energySamples: filled >= 20 ? energyBufRef.current.slice(0, filled) : null,
+        magnetizationSamples: filled >= 20 ? magnetizationBufRef.current.slice(0, filled) : null,
+        histSamplesFilled: filled,
       });
 
       animId = requestAnimationFrame(tick);
