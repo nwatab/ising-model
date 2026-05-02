@@ -295,7 +295,7 @@ export function IsingPage({
       </AccordionSection>
       <AccordionSection
         title="Energy Distribution"
-        tip="E/site = (1/N³)ΣEᵢ sampled each sweep. Gaussian by CLT."
+        tip="Per-site energy ε = H/(N³|J₁|) sampled each sweep. Converges to a Gaussian by CLT; width σ_ε feeds into Cv = N³ σ_ε² / T*²."
         open={eHistOpen}
         onToggle={() => setEHistOpen((o) => !o)}
       >
@@ -309,7 +309,7 @@ export function IsingPage({
       </AccordionSection>
       <AccordionSection
         title="Magnetization Distribution"
-        tip="M = (1/N³)Σsᵢ sampled each sweep. Bimodal below Tc shows ergodicity is broken for large N."
+        tip="M = (1/N³)Σsᵢ sampled each sweep. Bimodal below Tc reflects ergodicity breaking — tunnelling between the ±|M| minima is suppressed on simulation timescales, more strongly for large L."
         open={mHistOpen}
         onToggle={() => setMHistOpen((o) => !o)}
       >
