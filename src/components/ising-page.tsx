@@ -99,6 +99,7 @@ export function IsingPage({
   const [running, setRunning] = useState(false);
 
   const [paramsOpen, setParamsOpen] = useState(true);
+  const [displayOpen, setDisplayOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
   const [skOpen, setSkOpen] = useState(true);
   const [crOpen, setCrOpen] = useState(true);
@@ -181,11 +182,6 @@ export function IsingPage({
           setJ2OverJ1={setJ2OverJ1}
           h={h}
           setH={setH}
-          sliceAxis={sliceAxis}
-          setSliceAxis={setSliceAxis}
-          sliceIndex={sliceIndex}
-          setSliceIndex={setSliceIndex}
-          latticeSize={latticeSize}
         />
         <div className="flex gap-2">
           <button
@@ -204,6 +200,40 @@ export function IsingPage({
           >
             ↺
           </button>
+        </div>
+      </AccordionSection>
+      <AccordionSection
+        title="Display"
+        open={displayOpen}
+        onToggle={() => setDisplayOpen((o) => !o)}
+      >
+        <div className="mb-4 ml-2">
+          <div className="flex gap-2 mb-2">
+            {(["x", "y", "z"] as SliceAxis[]).map((ax) => (
+              <label key={ax} className="flex items-center gap-1 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="sliceAxis"
+                  checked={sliceAxis === ax}
+                  onChange={() => setSliceAxis(ax)}
+                  className="mr-0.5"
+                />
+                {ax}-axis
+              </label>
+            ))}
+          </div>
+          <label className="block text-sm font-medium mb-1">
+            {sliceAxis} = <span className="font-mono">{sliceIndex}</span>
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={latticeSize - 1}
+            step={1}
+            value={sliceIndex}
+            onChange={(e) => setSliceIndex(parseInt(e.target.value))}
+            className="w-full"
+          />
         </div>
       </AccordionSection>
       <AccordionSection
