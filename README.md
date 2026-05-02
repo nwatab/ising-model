@@ -1,74 +1,93 @@
 # J₁-J₂ Ising Model Interactive Visualization
 
-J₁-J₂ Ising模型のインタラクティブWeb可視化・シミュレーションツール。ブラウザ側でWebAssemblyによるMetropolisシミュレーションをリアルタイム実行できる構成。
+An interactive browser-based simulation and visualization tool for the J₁-J₂ Ising model. Metropolis Monte Carlo runs in real time via WebAssembly — no server required.
 
-## 物理モデル
+## Physics
 
-### ハミルトニアン
+### Hamiltonian
+
+$$
+\beta H = -K_1 \sum_{\langle ij \rangle} s_i s_j
+       - K_2 \sum_{\langle\langle ij \rangle\rangle} s_i s_j
+       - \tilde{h} \sum_i s_i
+$$
+
+- sᵢ ∈ {+1, −1} (Ising spins)
+- ⟨ij⟩: nearest-neighbour pairs; ⟪ij⟫: next-nearest-neighbour pairs
+- Periodic boundary conditions
+- **N ≡ Lᵈ**: total number of sites (L = linear size, d = spatial dimension)
+
+### Parameter space
+
+The simulation core operates in **(K₁, K₂, h̃)** space — Metropolis acceptance probabilities are computed in these coordinates.
+
+| Symbol | Definition        | Meaning                                                  |
+| ------ | ----------------- | -------------------------------------------------------- |
+| K₁     | βJ₁ (= J₁ / k_BT) | Nearest-neighbour coupling (positive: FM, negative: AFM) |
+| K₂     | βJ₂               | Next-nearest-neighbour coupling                          |
+| h̃      | βh                | Dimensionless external field                             |
+
+The high-temperature limit collapses to the single point K₁ = K₂ = h̃ = 0 regardless of the sign of J₁ — this is what makes (K₁, K₂, h̃) the natural simulation coordinates.
+
+### UI parameters
+
+| UI variable         | Definition                              | Control          |
+| ------------------- | --------------------------------------- | ---------------- |
+| T\* = k_BT / \|J₁\| | Reduced temperature (always positive)   | Log-scale slider |
+| J₁_sign ∈ {+1, −1}  | FM / AFM toggle                         | Radio buttons    |
+| h                   | External field (units of \|J₁\|)        | Slider           |
+| J₂                  | Next-nearest coupling (units of \|J₁\|) | Slider           |
+
+Conversion from UI to simulation core:
+
+$$
+K_1 = \frac{\mathrm{sign}(J_1)}{T^*}, \qquad
+K_2 = K_1 \cdot \frac{J_2}{J_1}, \qquad
+\tilde{h} = \frac{h}{T^*}
+$$
+
+### Critical points
+
+| Quantity            | 2D square              | 3D simple-cubic      |
+| ------------------- | ---------------------- | -------------------- |
+| T\*\_c (J₂ = h = 0) | 2.2692 (Onsager exact) | 4.5115 (MC estimate) |
+| K_c                 | 0.4407                 | 0.2217               |
+| Universality class  | 2D Ising               | 3D Ising             |
+
+### Frustration boundaries (T = 0, h = 0)
+
+The classical FM↔stripe and Néel↔stripe transitions occur at different J₂/\|J₁\| values depending on dimension and on the sign of J₁:
+
+| Regime                        | 2D square       | 3D simple-cubic     |
+| ----------------------------- | --------------- | ------------------- |
+| FM J₁ (>0) + AFM J₂ → stripe  | \|J₂/J₁\| = 1/2 | **\|J₂/J₁\| = 1/4** |
+| AFM J₁ (<0) + AFM J₂ → stripe | \|J₂/J₁\| = 1/2 | \|J₂/J₁\| = 1/2     |
+
+Near these boundaries the ground-state manifold is highly degenerate; Metropolis dynamics equilibrates very slowly and the simulation may freeze into mismatched domains.
+
+### Critical slowing down
+
+Near $T^*_c$, the relaxation time scales as $\tau \sim L^z$ with $z \approx 2.04$ for Metropolis local updates. For $L = 128$ this gives $\tau \sim 10^4$ MCS. Within shorter runs, the displayed ξ and C_v reflect **non-equilibrium coarsening** rather than true equilibrium values — observable as drifting M_Néel and ξ. This is a feature, not a bug: the simulation faithfully exhibits one of the central phenomena of continuous phase transitions.
+
+## Architecture
 
 ```
-βH = −K₁ Σ_{⟨ij⟩} sᵢsⱼ − K₂ Σ_{⟪ij⟫} sᵢsⱼ − h̃ Σᵢ sᵢ
-```
-
-- sᵢ ∈ {+1, −1}（Isingスピン）
-- ⟨ij⟩: 最近接ペア、⟪ij⟫: 次近接ペア
-- 周期境界条件
-
-### パラメータ空間
-
-正準表現（計算層）: **(K₁, K₂, h̃)** — Metropolisの受理確率計算はこの空間で行う。
-
-| 記号 | 定義 | 意味 |
-|------|------|------|
-| K₁ | βJ₁ = J₁ / k_BT | 最近接結合（正: FM、負: AFM） |
-| K₂ | βJ₂ | 次近接結合 |
-| h̃ | βh | 無次元外場 |
-
-高温極限は原点 K₁ = K₂ = h̃ = 0 に統一され、J₁の符号によらず連続。
-
-### UI表現（UI層）
-
-| UI変数 | 定義 | 型 |
-|--------|------|-----|
-| T* = k_BT / \|J₁\| | 無次元温度（常に正） | セグメント型セレクター |
-| J₁_sign ∈ {+1, −1} | FM / AFM トグル | トグルスイッチ |
-| h | 外場 | スライダー |
-| J₂ | 次近接結合 | スライダー |
-
-UI → 計算層への変換:
-```
-K₁ = J₁_sign / T*
-K₂ = K₁ · (J₂ / J₁)
-h̃  = h / T*
-```
-
-### 臨界点
-
-| 量 | 2D正方格子 | 3D単純立方格子 |
-|----|-----------|---------------|
-| T*_c | 2.269 (Onsager) | ≈ 4.51 |
-| K_c | 0.4407 | 0.2217 |
-| frustration境界 | J₂/J₁ ≈ 0.5 | J₂/J₁ ≈ 0.5 |
-
-## アーキテクチャ
-
-```
-ブラウザ
+Browser
 ──────────────────
-ランダム初期配置
+Random initial configuration
      ↓
 WASM Metropolis (Rust)
      ↓
-React UI で可視化
+React UI visualization
 ```
 
-| レイヤー | 技術 |
-|---------|------|
-| ブラウザ計算 | Rust → WebAssembly (wasm-pack) |
-| UI | React |
-| ホスティング | Vercel（静的エクスポート） |
+| Layer              | Technology                     |
+| ------------------ | ------------------------------ |
+| In-browser compute | Rust → WebAssembly (wasm-pack) |
+| UI                 | React                          |
+| Hosting            | Vercel (static export)         |
 
-**純JSではなくWASMが必須**: 臨界点付近の相関時間発散を考慮すると、10〜100倍の速度差が体感に直結する。
+**WASM is essential, not optional.** Near the critical point, autocorrelation times diverge and the 10–100× speed advantage over pure JS is directly perceptible — without it, equilibrating L = 128 in real time is unusable.
 
 ## Development
 
@@ -77,9 +96,9 @@ pnpm install
 pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000).
 
-### WASMの再ビルド
+### Rebuilding WASM
 
 ```bash
 cd ising-core

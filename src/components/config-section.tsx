@@ -95,8 +95,11 @@ export default function ConfigSection({
           <span className="relative group cursor-help">
             T<sup>*</sup>
             <span className="ml-0.5 text-blue-400 text-xs align-middle">ⓘ</span>
-            <span className="pointer-events-none absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1 rounded whitespace-nowrap z-50 font-normal">
-              T* = k<sub>B</sub>T / |J<sub>1</sub>|; T*<sub>c</sub> ≈ 4.51
+            <span className="pointer-events-none absolute top-full left-0 mt-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1.5 rounded w-64 z-50 font-normal leading-relaxed max-h-[50vh] overflow-y-auto">
+              Reduced temperature T* = k<sub>B</sub>T / |J<sub>1</sub>| (dimensionless; k<sub>B</sub> = |J<sub>1</sub>| = 1).<br />
+              Controls the balance between thermal fluctuations and spin-coupling energy.<br />
+              Critical point for the 3D simple-cubic Ising model: T*<sub>c</sub> ≈ 4.51 (K<sub>c</sub> = J<sub>1</sub>/k<sub>B</sub>T<sub>c</sub> ≈ 0.2217).<br />
+              Near T*<sub>c</sub>, relaxation time τ ~ L<sup>z</sup> (z ≈ 2 for Metropolis) ~ 10⁴ MCS for L = 128. Run longer to approach equilibrium.
             </span>
           </span>
           <span>= <span className="font-mono">{isInf ? "∞" : tStar.toFixed(2)}</span></span>

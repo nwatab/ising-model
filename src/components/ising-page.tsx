@@ -67,17 +67,19 @@ function AccordionSection({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-1.5 py-1.5 text-sm font-bold text-left text-gray-100 hover:text-white"
+        className="relative w-full flex items-center gap-1.5 py-1.5 text-sm font-bold text-left text-gray-100 hover:text-white group"
       >
         <span className="text-xs leading-none">{open ? "▾" : "▸"}</span>
         {tip ? (
-          <span className="relative group cursor-help">
-            {title}
-            <span className="ml-0.5 text-blue-400 text-xs align-middle">ⓘ</span>
-            <span className="pointer-events-none absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1 rounded whitespace-nowrap z-50 font-normal">
+          <>
+            <span className="cursor-help">
+              {title}
+              <span className="ml-0.5 text-blue-400 text-xs align-middle">ⓘ</span>
+            </span>
+            <span className="pointer-events-none absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1.5 rounded w-64 z-50 font-normal leading-relaxed">
               {tip}
             </span>
-          </span>
+          </>
         ) : title}
       </button>
       {open && <div className="pb-2">{children}</div>}
@@ -271,7 +273,7 @@ export function IsingPage({
       </AccordionSection>
       <AccordionSection
         title="S(k)"
-        tip={<>S(k) = (1/N<sup>3</sup>)|Σ s<sub>i</sub> e<sup>ik·r<sub>i</sub></sup>|<sup>2</sup></>}
+        tip={<>S(k) = (1/N)|Σ s<sub>i</sub> e<sup>ik·r<sub>i</sub></sup>|<sup>2</sup>, N = L³</>}
         open={skOpen}
         onToggle={() => setSkOpen((o) => !o)}
       >
@@ -287,7 +289,7 @@ export function IsingPage({
       </AccordionSection>
       <AccordionSection
         title="Energy Distribution"
-        tip="E/site = (1/N³)ΣEᵢ sampled each sweep. Gaussian by CLT."
+        tip="Per-site energy ε = H/(N³|J₁|) sampled each sweep. Converges to a Gaussian by CLT; width σ_ε feeds into Cv = N³ σ_ε² / T*²."
         open={eHistOpen}
         onToggle={() => setEHistOpen((o) => !o)}
       >
@@ -301,7 +303,7 @@ export function IsingPage({
       </AccordionSection>
       <AccordionSection
         title="Magnetization Distribution"
-        tip="M = (1/N³)Σsᵢ sampled each sweep. Bimodal below Tc shows ergodicity is broken for large N."
+        tip="M = (1/N³)Σsᵢ sampled each sweep. Bimodal below Tc reflects ergodicity breaking — tunnelling between the ±|M| minima is suppressed on simulation timescales, more strongly for large L."
         open={mHistOpen}
         onToggle={() => setMHistOpen((o) => !o)}
       >
