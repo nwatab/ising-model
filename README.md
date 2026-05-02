@@ -7,15 +7,41 @@ An interactive browser-based simulation and visualization tool for the J₁-J₂
 ### Hamiltonian
 
 $$
-\beta H = -K_1 \sum_{\langle ij \rangle} s_i s_j
-       - K_2 \sum_{\langle\langle ij \rangle\rangle} s_i s_j
-       - \tilde{h} \sum_i s_i
+H = -J_1 \sum_{\langle ij \rangle} s_i s_j
+    - J_2 \sum_{\langle\langle ij \rangle\rangle} s_i s_j
+    - h \sum_i s_i
 $$
 
-- sᵢ ∈ {+1, −1} (Ising spins)
-- ⟨ij⟩: nearest-neighbour pairs; ⟪ij⟫: next-nearest-neighbour pairs
-- Periodic boundary conditions
-- **N ≡ Lᵈ**: total number of sites (L = linear size, d = spatial dimension)
+### Canonical ensemble
+
+Configurations are sampled from the Boltzmann distribution
+
+$$
+P(\{s\}) = \frac{1}{Z} \exp(-\beta H), \qquad \beta = \frac{1}{k_B T}.
+$$
+
+Temperature enters here — not in $H$ itself.
+
+### Simulation coordinates
+
+The Metropolis acceptance ratio depends only on the combination $\beta H$,
+so the core stores temperature-absorbed couplings:
+
+$$
+K_1 \equiv \beta J_1, \qquad
+K_2 \equiv \beta J_2, \qquad
+\tilde h \equiv \beta h.
+$$
+
+In these variables the Boltzmann weight reads
+
+$$
+-\beta H = K_1 \sum_{\langle ij \rangle} s_i s_j
+         + K_2 \sum_{\langle\langle ij \rangle\rangle} s_i s_j
+         + \tilde h \sum_i s_i,
+$$
+
+which is what the WASM kernel actually evaluates.
 
 ### Parameter space
 
@@ -41,9 +67,9 @@ The high-temperature limit collapses to the single point K₁ = K₂ = h̃ = 0 r
 Conversion from UI to simulation core:
 
 $$
-K_1 = \frac{\mathrm{sign}(J_1)}{T^*}, \qquad
+K_1 = \frac{\operatorname{sign}(J_1)}{T^{*}}, \qquad
 K_2 = K_1 \cdot \frac{J_2}{J_1}, \qquad
-\tilde{h} = \frac{h}{T^*}
+\tilde{h} = \frac{h}{T^{*}}
 $$
 
 ### Critical points
