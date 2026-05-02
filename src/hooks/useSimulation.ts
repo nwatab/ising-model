@@ -262,12 +262,12 @@ export function useSimulation({
         : (tStar > 0 && magnetizationStdDev !== null)
           ? spinCount * magnetizationStdDev ** 2 / tStar
           : null;
-      const skReady = (
-        isFinite(tStar) &&
+      const skBufReady = (
         skSumCountRef.current >= 10 &&
         skSumBufRef.current !== null &&
         skPathDefRef.current.length > 0
       );
+      const skReady = isFinite(tStar) && skBufReady;
       // S_conn(Γ) = N³·Var(M): connected structure factor at Γ, used for FM second-moment ξ.
       const sConnGamma = magnetizationStdDev !== null
         ? spinCount * magnetizationStdDev ** 2
@@ -282,7 +282,7 @@ export function useSimulation({
           neelMag,
           stripeRef.current,
         ) : null;
-      const correlationData = skReady ? computeCorrelationData(
+      const correlationData = skBufReady ? computeCorrelationData(
         skSumBufRef.current!,
         skSumCountRef.current,
         skPathDefRef.current,
