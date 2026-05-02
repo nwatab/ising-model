@@ -67,9 +67,9 @@ The high-temperature limit collapses to the single point K₁ = K₂ = h̃ = 0 r
 Conversion from UI to simulation core:
 
 $$
-K_1 = \frac{\operatorname{sign}(J_1)}{T^{*}}, \qquad
+K_1 = \frac{\mathrm{sign}(J_1)}{T^{\ast}}, \qquad
 K_2 = K_1 \cdot \frac{J_2}{J_1}, \qquad
-\tilde{h} = \frac{h}{T^{*}}
+\tilde{h} = \frac{h}{T^{\ast}}
 $$
 
 ### Critical points
