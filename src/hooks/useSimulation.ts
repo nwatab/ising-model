@@ -114,6 +114,7 @@ export function useSimulation({
       const seed = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER));
       wasmRef.current?.free();
       wasmRef.current = W.from_bytes(bytes, newLat.latticeSize, seed);
+      kickRef.current();
     });
   }, [initialSpins]);
 
