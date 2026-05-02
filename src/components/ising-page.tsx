@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState, useMemo, useEffect } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import Image from "next/image";
 import { useSimulation, SimStats, skPathSegments } from "@/hooks/useSimulation";
 import { T_STAR_CRITICAL } from "@/constants";
@@ -119,16 +119,10 @@ export function IsingPage({
   const handleReset = () =>
     setWarmSpins(new Uint8Array(SpinLattice.createRandom(latticeSize)));
 
-  // Reinitialize spins when J₁ sign flips — changing sign means swapping the
-  // physical sample (FM ↔ AFM), so the current spin configuration is no longer
-  // meaningful.  Using a ref prevents firing on the initial render and is safe
-  // under React strict mode (second invocation sees prevJSign already updated).
-  const prevJSignRef = useRef<1 | -1>(jSign);
-  useEffect(() => {
-    if (prevJSignRef.current === jSign) return;
-    prevJSignRef.current = jSign;
+  const handleSetJSign = (v: 1 | -1) => {
+    setJSign(v);
     setWarmSpins(new Uint8Array(SpinLattice.createRandom(latticeSize)));
-  }, [jSign, latticeSize]);
+  };
 
   const phaseDiagramData = phaseDiagramRaw as unknown as PhaseDiagramData;
 
@@ -177,7 +171,7 @@ export function IsingPage({
           tStar={tStar}
           setTStar={setTStar}
           jSign={jSign}
-          setJSign={setJSign}
+          setJSign={handleSetJSign}
           j2OverJ1={j2OverJ1}
           setJ2OverJ1={setJ2OverJ1}
           h={h}
