@@ -67,17 +67,19 @@ function AccordionSection({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-1.5 py-1.5 text-sm font-bold text-left text-gray-100 hover:text-white"
+        className="relative w-full flex items-center gap-1.5 py-1.5 text-sm font-bold text-left text-gray-100 hover:text-white group"
       >
         <span className="text-xs leading-none">{open ? "▾" : "▸"}</span>
         {tip ? (
-          <span className="relative group cursor-help">
-            {title}
-            <span className="ml-0.5 text-blue-400 text-xs align-middle">ⓘ</span>
-            <span className="pointer-events-none absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1 rounded whitespace-nowrap z-50 font-normal">
+          <>
+            <span className="cursor-help">
+              {title}
+              <span className="ml-0.5 text-blue-400 text-xs align-middle">ⓘ</span>
+            </span>
+            <span className="pointer-events-none absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-900 border border-gray-600 text-gray-200 text-xs px-2 py-1.5 rounded w-64 z-50 font-normal leading-relaxed">
               {tip}
             </span>
-          </span>
+          </>
         ) : title}
       </button>
       {open && <div className="pb-2">{children}</div>}
