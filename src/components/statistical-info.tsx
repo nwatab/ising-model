@@ -30,9 +30,9 @@ function fmtNum(x: number): string {
 
 const TIP_ENERGY = (
   <>
-    Energy per site in units of |J₁| (k<sub>B</sub> = 1).<br />
+    Energy per site in units of |J₁| (k<sub>B</sub> = 1; N ≡ L³ = total sites).<br />
     H = −J₁Σ<sub>⟨ij⟩</sub>s<sub>i</sub>s<sub>j</sub> − J₂Σ<sub>⟪ij⟫</sub>s<sub>i</sub>s<sub>j</sub> − hΣs<sub>i</sub><br />
-    ε = H / (N³|J₁|).<br />
+    ε = H / (N|J₁|).<br />
     Ground state (FM, J₁ &gt; 0, J₂ = 0, h = 0): ε = −3 (6 NN bonds × ½ per site).<br />
     High-T limit: ε → 0.<br />
     Shown as mean ± 1σ once ≥ 20 sweeps are sampled.
@@ -42,7 +42,7 @@ const TIP_ENERGY = (
 const TIP_MAG = (
   <>
     Ferromagnetic order parameter.<br />
-    M = (1/N³) Σ s<sub>i</sub> ∈ [−1, +1].<br />
+    M = (1/N) Σ s<sub>i</sub> ∈ [−1, +1].<br />
     Below T<sub>c</sub> (FM): |M| → 1 as T → 0 (spontaneous symmetry breaking at h = 0).<br />
     Above T<sub>c</sub>: time-average ⟨M⟩ = 0.<br />
     A bimodal magnetisation histogram indicates ergodicity breaking in the ordered phase.
@@ -52,7 +52,7 @@ const TIP_MAG = (
 const TIP_NEEL = (
   <>
     Staggered magnetisation — order parameter for Néel antiferromagnetism.<br />
-    M<sub>Néel</sub> = (1/N³) Σ s<sub>i</sub>(−1)<sup>x<sub>i</sub>+y<sub>i</sub>+z<sub>i</sub></sup><br />
+    M<sub>Néel</sub> = (1/N) Σ s<sub>i</sub>(−1)<sup>x<sub>i</sub>+y<sub>i</sub>+z<sub>i</sub></sup><br />
     → ±1 in a perfect checkerboard; 0 in the paramagnetic phase.<br />
     Néel order is stable for J₁ &lt; 0, |J₂/J₁| ≲ 1/2 (3D SC lattice).
   </>
@@ -61,7 +61,7 @@ const TIP_NEEL = (
 const TIP_STRIPE = (
   <>
     Stripe order parameter.<br />
-    M<sub>stripe</sub> = max<sub>α</sub> √(S(k<sub>α</sub>) / N³),<br />
+    M<sub>stripe</sub> = max<sub>α</sub> √(S(k<sub>α</sub>) / N),<br />
     k<sub>α</sub> ∈ {"{"}(π,0,0), (0,π,0), (0,0,π){"}"} (X-points of the 3D SC Brillouin zone).<br />
     Detects layered phases where spins modulate along a single axis.<br />
     Ground-state boundaries (3D SC): stripe ↔ FM at |J₂/J₁| = 1/4 (FM J₁); stripe ↔ Néel at |J₂/J₁| = 1/2 (AFM J₁).
@@ -71,7 +71,7 @@ const TIP_STRIPE = (
 const TIP_CV = (
   <>
     Specific heat per site (k<sub>B</sub> = 1).<br />
-    C<sub>v</sub> = N³ · Var(ε) / T*² — fluctuation-dissipation theorem.<br />
+    C<sub>v</sub> = N · Var(ε) / T*² — fluctuation-dissipation theorem.<br />
     Diverges at T<sub>c</sub> in the thermodynamic limit (critical exponent α ≈ 0.11 for 3D Ising).<br />
     Finite-size peak scales as L<sup>α/ν</sup> ≈ L<sup>0.17</sup> — nearly flat for large L.<br />
     Requires ≥ 20 energy samples.
@@ -81,7 +81,7 @@ const TIP_CV = (
 const TIP_CHI = (
   <>
     Magnetic susceptibility per site.<br />
-    χ = N³ · Var(M) / T* — fluctuation-dissipation theorem.<br />
+    χ = N · Var(M) / T* — fluctuation-dissipation theorem.<br />
     Diverges at T<sub>c</sub> (critical exponent γ ≈ 1.24).<br />
     Finite-system peak height scales as L<sup>γ/ν</sup> ≈ L<sup>1.97</sup>.<br />
     Requires ≥ 20 magnetisation samples.
@@ -93,7 +93,7 @@ const TIP_XI = (
     Second-moment correlation length in lattice units.<br />
     ξ = (1/|δk|) · √[S<sub>conn</sub>(k*) / S<sub>conn</sub>(k*+δk) − 1],<br />
     where k* is the ordering wavevector (Γ for FM, R for Néel AFM).<br />
-    Diverges at T<sub>c</sub> in infinite systems (ν ≈ 0.63). In finite L systems it saturates near L/2.<br />
+    Diverges at T<sub>c</sub> in infinite systems (ν ≈ 0.63). In finite systems it saturates near L/2.<br />
     Near T*<sub>c</sub>, Metropolis dynamics slows critically: τ ~ L<sup>z</sup> (z ≈ 2).
     For L = 128, ~10⁴ MCS are needed to reach equilibrium — ξ &gt; L/2 after a few hundred sweeps reflects non-equilibrium coarsening, not a true divergence.<br />
     Display: "waiting" = collecting data · &lt; a = below one lattice spacing · &gt; L/2 = deeply ordered or coarsening.
