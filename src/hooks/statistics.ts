@@ -34,20 +34,29 @@ export function computeCorrelationData(
   return result;
 }
 
-// Ornstein-Zernike fit around the S(k) peak: 1/S(k) = α + β·|k−k₀|²  →  ξ = √(β/α).
-// Finds the peak in the interior of the path (skips Γ endpoints), then fits ±WIN points.
-// For FM (peak at or near Γ, index ≤1): falls back to the Γ→X small-k OZ fit instead,
-// because index 0 can be a Bragg peak in the ordered phase.
-// Returns ξ in lattice spacings, or null when the fit is degenerate.
+// Correlation length from S(k) path — second-moment method throughout.
+// ξ = √(S_conn(k*)/S(k*+δk) − 1) / |δk|
+//
+// FM/PM branch (no dominant non-Γ peak):
+//   k* = Γ, S_conn(Γ) = N³·Var(M) passed as sConnGamma.
+//   Handles flat S(k) (paramagnetic) and ξ → ∞ (deep ordered FM) correctly.
+//
+// AFM branch (S(k*) > 3·S(path[1])):
+//   k* = detected peak (R for Néel, X for stripe).
+//   S_conn(k*) = S(k*) − N³·M_op²; Bragg spike subtracted using instantaneous M_op.
+//   If subtraction overshoots (numerical), falls back to S(k*) (still gives ξ ≫ L/2).
 export function fitCorrelationLength(
   skSum: Float32Array,
   count: number,
   pathDef: { nx: number; ny: number; nz: number }[],
-  N: number
+  N: number,
+  sConnGamma: number | null = null,
+  neelMag: number = 0,
+  stripeMag: number = 0,
 ): number | null {
   const nPts = pathDef.length;
-  const steps = Math.max(4, Math.floor(Math.floor(N / 2) / 2));
   const kFactor = (2 * Math.PI / N) ** 2;
+  const steps = Math.max(4, Math.floor(Math.floor(N / 2) / 2));
 
   // Find peak, excluding both Γ endpoints (index 0 and nPts-1 are the same k-point).
   let peakIdx = 1;
@@ -57,51 +66,46 @@ export function fitCorrelationLength(
     if (v > peakVal) { peakVal = v; peakIdx = i; }
   }
 
-  if (peakIdx <= 1) {
-    // FM-like: peak is right at/near Γ. Use small-k OZ fit on Γ→X (indices 1..steps).
-    let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, n = 0;
-    for (let i = 1; i <= steps; i++) {
-      const s = skSum[i] / count;
-      if (!(s > 0)) continue;
-      const x = kFactor * pathDef[i].nx ** 2;
-      const y = 1 / s;
-      sumX += x; sumY += y; sumXX += x * x; sumXY += x * y; n++;
-    }
-    if (n < 2) return null;
-    const denom = n * sumXX - sumX * sumX;
-    if (Math.abs(denom) < 1e-30) return null;
-    const alpha = (sumY * sumXX - sumX * sumXY) / denom;
-    const beta  = (n * sumXY - sumX * sumY)  / denom;
-    if (alpha <= 0 || beta <= 0) return null;
-    return Math.sqrt(beta / alpha);
+  // A true AFM peak has S(k*) >> S(path[1]) AND a real order parameter.
+  // High-T noise can accidentally satisfy the S(k) ratio alone; requiring
+  // |M_op| > 5% prevents mis-routing disordered states into the AFM branch.
+  const sAtOne = skSum[1] / count;
+  const hasAfmPeak = peakIdx > 1
+    && skSum[peakIdx] / count > sAtOne * 3
+    && (Math.abs(neelMag) > 0.05 || Math.abs(stripeMag) > 0.05);
+
+  if (!hasAfmPeak) {
+    // FM second-moment: ξ = √(S_conn(Γ)/S(δk) − 1) / |δk|
+    if (!(sConnGamma! > 0)) return null;
+    const sNext = sAtOne;
+    if (!(sNext > 0)) return null;
+    const ratio = sConnGamma! / sNext;
+    if (ratio <= 1) return 0;
+    const p0 = pathDef[0], p1 = pathDef[1];
+    const dk2 = kFactor * ((p1.nx - p0.nx) ** 2 + (p1.ny - p0.ny) ** 2 + (p1.nz - p0.nz) ** 2);
+    return dk2 > 0 ? Math.sqrt(ratio - 1) / Math.sqrt(dk2) : null;
   }
 
-  // AFM-like (peak at R or X): fit ±WIN points around peak in k-space.
-  // The peak point itself (dk²=0) is EXCLUDED: in the ordered phase it carries
-  // a Bragg spike (S ∝ N³M²) that dwarfs the fluctuation background, making
-  // 1/S(peak) ≈ 0 and pulling the OZ intercept α below zero. Excluding it
-  // leaves only the fluctuation spectrum, which is what ξ measures.
-  const WIN = 4;
-  const lo = Math.max(1, peakIdx - WIN);
-  const hi = Math.min(nPts - 2, peakIdx + WIN);
-  const k0 = pathDef[peakIdx];
-  let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0, n = 0;
-  for (let i = lo; i <= hi; i++) {
-    if (i === peakIdx) continue;
-    const s = skSum[i] / count;
-    if (!(s > 0)) continue;
-    const p = pathDef[i];
-    const dk2 = kFactor * ((p.nx - k0.nx) ** 2 + (p.ny - k0.ny) ** 2 + (p.nz - k0.nz) ** 2);
-    const y = 1 / s;
-    sumX += dk2; sumY += y; sumXX += dk2 * dk2; sumXY += dk2 * y; n++;
-  }
-  if (n < 2) return null;
-  const denom = n * sumXX - sumX * sumX;
-  if (Math.abs(denom) < 1e-30) return null;
-  const alpha = (sumY * sumXX - sumX * sumXY) / denom;
-  const beta  = (n * sumXY - sumX * sumY)  / denom;
-  if (alpha <= 0 || beta <= 0) return null;
-  return Math.sqrt(beta / alpha);
+  // AFM second-moment: subtract Bragg spike at k* using instantaneous M_op.
+  // If the subtraction overshoots (numerical; shouldn't happen in equilibrium),
+  // fall back to the raw S(k*) — still large → ξ ≫ L/2 → "> L/2" display.
+  if (peakIdx + 1 >= nPts - 1) return null; // avoid using the closing Γ endpoint
+  const sPeak = skSum[peakIdx] / count;
+  const N3 = N ** 3;
+  const half = Math.max(2, Math.floor(steps / 4));
+  let mOp = 0;
+  if (Math.abs(peakIdx - steps * 3) <= half) mOp = Math.abs(neelMag);
+  else if (Math.abs(peakIdx - steps) <= half) mOp = Math.abs(stripeMag);
+  const rawConn = sPeak - N3 * mOp * mOp;
+  const numerator = rawConn > 0 ? rawConn : sPeak;
+  const sNext = skSum[peakIdx + 1] / count;
+  // S(k*+δk) ≈ 0 in deep ordered phase (fluctuations vanish) → ξ ≫ L.
+  if (!(sNext > 0)) return numerator > 0 ? Infinity : null;
+  const ratio = numerator / sNext;
+  if (ratio <= 1) return 0;
+  const p0 = pathDef[peakIdx], p1 = pathDef[peakIdx + 1];
+  const dk2 = kFactor * ((p1.nx - p0.nx) ** 2 + (p1.ny - p0.ny) ** 2 + (p1.nz - p0.nz) ** 2);
+  return dk2 > 0 ? Math.sqrt(ratio - 1) / Math.sqrt(dk2) : null;
 }
 
 // High-symmetry path Γ→X→M→R→Γ on the simple-cubic Brillouin zone.

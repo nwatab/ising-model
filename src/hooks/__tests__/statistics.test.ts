@@ -191,32 +191,54 @@ describe("fitCorrelationLength", () => {
     expect(fitCorrelationLength(skSum, 1, pathDef, N)).toBeNull();
   });
 
-  describe("FM branch (peak near Γ)", () => {
-    it("recovers ξ = √(β/α) from exact OZ data on Γ→X", () => {
-      // 1/S(k) = α + β·kFactor·nx² with α=0.5, β=1 → ξ=√2
-      const alpha = 0.5, beta = 1;
-      const skSum = new Float32Array(nPts).fill(0.001);
-      for (let i = 1; i <= steps; i++) {
-        const x = kFactor * pathDef[i].nx ** 2;
-        skSum[i] = 1 / (alpha + beta * x);
-      }
-      // Make index 1 the largest so peakIdx stays ≤ 1
-      // (OZ form is decreasing, so skSum[1] > skSum[2] > ...)
-      const xi = fitCorrelationLength(skSum, 1, pathDef, N);
-      expect(xi).not.toBeNull();
-      expect(xi!).toBeCloseTo(Math.sqrt(beta / alpha), 5);
+  describe("FM branch (second-moment, peak near Γ)", () => {
+    it("returns null when sConnGamma is not provided", () => {
+      const skSum = new Float32Array(nPts).fill(1);
+      expect(fitCorrelationLength(skSum, 1, pathDef, N)).toBeNull();
     });
 
-    it("returns null when α ≤ 0 (diverging or negative intercept)", () => {
-      // Construct data where regression intercept is negative
+    it("returns null when sConnGamma is null", () => {
+      const skSum = new Float32Array(nPts).fill(1);
+      expect(fitCorrelationLength(skSum, 1, pathDef, N, null)).toBeNull();
+    });
+
+    it("returns 0 (ξ < a, disordered) when ratio ≤ 1", () => {
+      // sConnGamma < S(path[1]) → ratio < 1 → ξ = 0
+      const skSum = new Float32Array(nPts).fill(1);
+      skSum[1] = 5;
+      expect(fitCorrelationLength(skSum, 1, pathDef, N, 1)).toBe(0);
+    });
+
+    it("recovers ξ from second-moment formula: ratio = 1 + ξ²·dk²", () => {
+      const xi = 5.0;
+      const p0 = pathDef[0], p1 = pathDef[1];
+      const dk2 = kFactor * ((p1.nx - p0.nx) ** 2 + (p1.ny - p0.ny) ** 2 + (p1.nz - p0.nz) ** 2);
+      const sConn = 100;
+      const sNext = sConn / (1 + xi * xi * dk2);
       const skSum = new Float32Array(nPts).fill(0.001);
-      // Make S(k) grow with k → 1/S(k) decreasing → negative slope → α>0 but slope β<0
-      // Instead: very large values everywhere so α<0 after regression
-      for (let i = 1; i <= steps; i++) {
-        skSum[i] = 1000; // near-flat and huge → 1/S≈0; regression α≈0, could go negative
-      }
-      // This is edge-case testing; the function returns null or a number but must not throw
-      expect(() => fitCorrelationLength(skSum, 1, pathDef, N)).not.toThrow();
+      skSum[1] = sNext;
+      const result = fitCorrelationLength(skSum, 1, pathDef, N, sConn);
+      expect(result).not.toBeNull();
+      expect(result!).toBeCloseTo(xi, 4);
+    });
+
+    it("returns ξ > L/2 for deep FM (sConnGamma ≫ S(path[1]))", () => {
+      // Simulates the deep-ordered FM state where ξ → ∞
+      const skSum = new Float32Array(nPts).fill(0.001);
+      skSum[1] = 0.001;
+      const xi = fitCorrelationLength(skSum, 1, pathDef, N, 1000);
+      expect(xi).not.toBeNull();
+      expect(xi!).toBeGreaterThan(N / 2);
+    });
+
+    it("routes to FM even when noisy peakIdx > 1 (flat S(k), e.g. T*=20)", () => {
+      // Flat S(k) with a tiny noise bump at index 3 — peak search lands there,
+      // but S(3) < 3×S(path[1]) so the FM branch is used, not AFM OZ.
+      const skSum = new Float32Array(nPts).fill(1.0);
+      skSum[3] = 1.5; // noise, not 3× larger than skSum[1]=1.0
+      // sConnGamma ≈ S(path[1]) → ratio ≈ 1 → ξ = 0 ("< a")
+      const xi = fitCorrelationLength(skSum, 1, pathDef, N, 1.0);
+      expect(xi).toBe(0);
     });
   });
 
@@ -236,36 +258,34 @@ describe("fitCorrelationLength", () => {
         const dk2 = kFactor * ((p.nx - k0.nx) ** 2 + (p.ny - k0.ny) ** 2 + (p.nz - k0.nz) ** 2);
         skSum[i] = 1 / (alpha + beta * dk2);
       }
-      // Ensure the R-point has the global peak among interior indices
-      // S[rIdx] = 1/alpha = 2, which dominates the 0.001 background
-      const xi = fitCorrelationLength(skSum, 1, pathDef, N);
+      // Ensure the R-point has the global peak among interior indices.
+      // neelMag=0.5 satisfies the order-param threshold; rawConn overshoots
+      // (bragg > sPeak), so the code falls back to numerator=sPeak — same result.
+      const xi = fitCorrelationLength(skSum, 1, pathDef, N, null, 0.5);
       expect(xi).not.toBeNull();
       expect(xi!).toBeCloseTo(Math.sqrt(beta / alpha), 4);
     });
 
-    it("recovers ξ even when Bragg peak at R makes 1/S(R)≈0 (ordered phase)", () => {
-      // In the ordered phase S(R) ≫ S_fluct, so 1/S(R) ≈ 0, much less than the OZ
-      // intercept α = 1/χ. Without the peakIdx-exclusion fix, that anomalously small
-      // point pulls the regression intercept α below zero → null. With the fix, ξ is
-      // recovered from the 8 surrounding points which do follow 1/S = α + β·dk².
+    it("recovers ξ when Bragg spike at R is subtracted via neelMag", () => {
+      // In the ordered phase S(R) = Bragg + fluctuation.
+      // Second-moment: S_conn(R) = S(R) − N³·M_Néel² = fluctuation part → ξ = √(β/α).
       const alpha = 0.5, beta = 1;
       const rIdx = steps * 3;
       const k0 = pathDef[rIdx];
+      const N3 = N ** 3; // 4096 for N=16
+      const neelMag = 0.8;
+      const bragg = N3 * neelMag * neelMag;
       const skSum = new Float32Array(nPts).fill(0.001);
       const WIN = 4;
       const lo = Math.max(1, rIdx - WIN);
       const hi = Math.min(nPts - 2, rIdx + WIN);
       for (let i = lo; i <= hi; i++) {
-        if (i === rIdx) {
-          // Bragg peak: S(R) ≫ S_fluct — 1/S(R) ≈ 0, far below the OZ intercept
-          skSum[i] = 1000;
-        } else {
-          const p = pathDef[i];
-          const dk2 = kFactor * ((p.nx - k0.nx) ** 2 + (p.ny - k0.ny) ** 2 + (p.nz - k0.nz) ** 2);
-          skSum[i] = 1 / (alpha + beta * dk2);
-        }
+        const p = pathDef[i];
+        const dk2 = kFactor * ((p.nx - k0.nx) ** 2 + (p.ny - k0.ny) ** 2 + (p.nz - k0.nz) ** 2);
+        const fluct = 1 / (alpha + beta * dk2);
+        skSum[i] = i === rIdx ? bragg + fluct : fluct; // Bragg+fluctuation at peak, fluctuation elsewhere
       }
-      const xi = fitCorrelationLength(skSum, 1, pathDef, N);
+      const xi = fitCorrelationLength(skSum, 1, pathDef, N, null, neelMag);
       expect(xi).not.toBeNull();
       expect(xi!).toBeCloseTo(Math.sqrt(beta / alpha), 4);
     });
@@ -285,9 +305,19 @@ describe("fitCorrelationLength", () => {
         const dk2 = kFactor * ((p.nx - k0.nx) ** 2 + (p.ny - k0.ny) ** 2 + (p.nz - k0.nz) ** 2);
         skSum[i] = count / (alpha + beta * dk2);
       }
-      const xi = fitCorrelationLength(skSum, count, pathDef, N);
+      const xi = fitCorrelationLength(skSum, count, pathDef, N, null, 0.5);
       expect(xi).not.toBeNull();
       expect(xi!).toBeCloseTo(Math.sqrt(beta / alpha), 4);
+    });
+
+    it("returns Infinity when S(k*+δk)≈0 (deep ordered AFM, ξ→∞)", () => {
+      // Deep Néel order: enormous Bragg peak, adjacent point ≈ 0.
+      const rIdx = steps * 3;
+      const skSum = new Float32Array(nPts).fill(0);
+      skSum[rIdx] = 1000; // large (Bragg + fluctuations)
+      // skSum[rIdx+1] = 0 → sNext = 0 → should return Infinity, not null
+      const xi = fitCorrelationLength(skSum, 1, pathDef, N, null, 0.5);
+      expect(xi).toBe(Infinity);
     });
   });
 
@@ -305,9 +335,24 @@ describe("fitCorrelationLength", () => {
         const dk2 = kFactor * ((p.nx - k0.nx) ** 2 + (p.ny - k0.ny) ** 2 + (p.nz - k0.nz) ** 2);
         skSum[i] = 1 / (alpha + beta * dk2);
       }
-      const xi = fitCorrelationLength(skSum, 1, pathDef, N);
+      // stripeMag=0.5 satisfies the order-param threshold; overshoots rawConn
+      // → fallback to sPeak as numerator, giving the same √(β/α) result.
+      const xi = fitCorrelationLength(skSum, 1, pathDef, N, null, 0, 0.5);
       expect(xi).not.toBeNull();
       expect(xi!).toBeCloseTo(Math.sqrt(beta / alpha), 4);
+    });
+  });
+
+  describe("routing: order-parameter threshold", () => {
+    it("routes to FM when noisy S(k) peak exceeds 3× threshold but neelMag≈0", () => {
+      // Disordered AFM at high T: a noise spike satisfies the S(k) ratio alone,
+      // but |neelMag|=0 < 0.05 threshold → FM branch, not AFM branch.
+      const skSum = new Float32Array(nPts).fill(1.0);
+      const rIdx = steps * 3;
+      skSum[rIdx] = 5.0; // > 3×S(path[1])=3.0, but no real order
+      // FM branch: sConnGamma/S(path[1]) = 1.0/1.0 = 1 ≤ 1 → 0 ("< a")
+      const xi = fitCorrelationLength(skSum, 1, pathDef, N, 1.0, 0, 0);
+      expect(xi).toBe(0);
     });
   });
 });

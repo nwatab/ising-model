@@ -229,7 +229,10 @@ export function useSimulation({
           : (latticeRef.current.betaEnergy(betaJ, betaJ2, betaH) / latticeRef.current.spinCount) * tStar
         : 0;
 
-      if (didSweep && isFinite(tStar)) {
+      const mag = wl ? wl.magnetization() : latticeRef.current.magnetization();
+      const neelMag = wl ? wl.neel_order_param() : latticeRef.current.neelOrderParam();
+
+      if (didSweep) {
         const last = lastParamsForHistRef.current;
         if (!last || last.betaJ !== betaJ || last.betaJ2 !== betaJ2 || last.betaH !== betaH) {
           histSampleCountRef.current = 0;
@@ -240,9 +243,7 @@ export function useSimulation({
         }
         const pos = histSampleCountRef.current % ENERGY_BUFFER_SIZE;
         energyBufRef.current[pos] = energyPerSite;
-        magnetizationBufRef.current[pos] = wl
-          ? wl.magnetization()
-          : latticeRef.current.magnetization();
+        magnetizationBufRef.current[pos] = mag;
         histSampleCountRef.current++;
       }
 
@@ -266,12 +267,19 @@ export function useSimulation({
         skSumBufRef.current !== null &&
         skPathDefRef.current.length > 0
       );
+      // S_conn(Γ) = N³·Var(M): connected structure factor at Γ, used for FM second-moment ξ.
+      const sConnGamma = magnetizationStdDev !== null
+        ? spinCount * magnetizationStdDev ** 2
+        : null;
       const correlationLength = !isFinite(tStar) ? 0
         : skReady ? fitCorrelationLength(
           skSumBufRef.current!,
           skSumCountRef.current,
           skPathDefRef.current,
-          latticeRef.current.latticeSize
+          latticeRef.current.latticeSize,
+          sConnGamma,
+          neelMag,
+          stripeRef.current,
         ) : null;
       const correlationData = skReady ? computeCorrelationData(
         skSumBufRef.current!,
@@ -281,10 +289,10 @@ export function useSimulation({
       ) : null;
 
       onStatsRef.current({
-        magnetization: wl ? wl.magnetization() : latticeRef.current.magnetization(),
+        magnetization: mag,
         energyPerSite,
         sweeps: sweepsRef.current,
-        neelOrderParam: wl ? wl.neel_order_param() : latticeRef.current.neelOrderParam(),
+        neelOrderParam: neelMag,
         stripeOrderParam: stripeRef.current,
         skPath: skPathRef.current,
         energySamples: filled >= 20 ? energyBufRef.current.slice(0, filled) : null,
