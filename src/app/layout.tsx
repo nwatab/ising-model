@@ -34,8 +34,8 @@ export default function RootLayout({
             </Script>
           </>
         )}
-        <link rel="modulepreload" href="/wasm/ising_core.js" />
-        <link rel="preload" href="/wasm/ising_core_bg.wasm" as="fetch" crossOrigin="anonymous" />
+        <link rel="modulepreload" href={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/wasm/ising_core.js`} />
+        <link rel="preload" href={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/wasm/ising_core_bg.wasm`} as="fetch" crossOrigin="anonymous" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="alternate icon" href="/favicon.ico" sizes="16x16" />
       </head>

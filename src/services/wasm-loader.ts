@@ -19,10 +19,11 @@ let ready: Promise<WasmModule> | null = null;
 export function loadWasm(): Promise<WasmModule> {
   if (ready) return ready;
   ready = (async () => {
+    const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
     const m = await import(
-      /* webpackIgnore: true */ "/wasm/ising_core.js" as string
+      /* webpackIgnore: true */ `${base}/wasm/ising_core.js` as string
     ) as WasmModule;
-    await m.default({ module_or_path: "/wasm/ising_core_bg.wasm" });
+    await m.default({ module_or_path: `${base}/wasm/ising_core_bg.wasm` });
     return m;
   })().catch((e) => { console.error("[wasm] load failed:", e); throw e; });
   return ready;
