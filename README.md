@@ -61,7 +61,7 @@ The high-temperature limit collapses to the single point K₁ = K₂ = h̃ = 0 r
 | ------------------- | --------------------------------------- | ---------------- |
 | T\* = k_BT / \|J₁\| | Reduced temperature (always positive)   | Log-scale slider |
 | J₁_sign ∈ {+1, −1}  | FM / AFM toggle                         | Radio buttons    |
-| h                   | External field (units of \|J₁\|)        | Slider           |
+| h ∈ [−2, +2]        | External field (units of \|J₁\|)        | Slider           |
 | J₂                  | Next-nearest coupling (units of \|J₁\|) | Slider           |
 
 Conversion from UI to simulation core:
