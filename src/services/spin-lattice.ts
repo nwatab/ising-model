@@ -76,6 +76,24 @@ export class SpinLattice extends BitPackedArray {
     return lat;
   }
 
+  // Maps (J₁, J₂) equilibrium → (−J₁, J₂) equilibrium at h=0.
+  // Applies σ'_i = (−1)^(x+y+z) σ_i by XOR-ing the odd-parity color blocks.
+  // Color-sorted layout: color c = ((x&1)<<2)|((y&1)<<1)|(z&1); odd-parity colors: 1,2,4,7.
+  static applyNeelTransform(spins: Uint8Array): Uint8Array {
+    const N = Math.round(Math.cbrt(spins.length * 8));
+    const M = N >> 1;
+    const blockBits = M * M * M;
+    const result = new Uint8Array(spins);
+    const fullBytes = Math.floor(blockBits / 8);
+    const rem = blockBits & 7;
+    for (const color of [1, 2, 4, 7]) {
+      const start = color * Math.ceil(blockBits / 8);
+      for (let i = start; i < start + fullBytes; i++) result[i] ^= 0xFF;
+      if (rem > 0) result[start + fullBytes] ^= (1 << rem) - 1;
+    }
+    return result;
+  }
+
   randomize(): this {
     const CHUNK = 65536;
     for (let offset = 0; offset < this.byteLength; offset += CHUNK) {

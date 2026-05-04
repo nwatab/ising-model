@@ -121,11 +121,6 @@ export function IsingPage({
   const handleReset = () =>
     setWarmSpins(new Uint8Array(SpinLattice.createRandom(latticeSize)));
 
-  const handleSetJSign = (v: 1 | -1) => {
-    setJSign(v);
-    setWarmSpins(new Uint8Array(SpinLattice.createRandom(latticeSize)));
-  };
-
   const phaseDiagramData = phaseDiagramRaw as unknown as PhaseDiagramData;
 
   const [stats, setStats] = useState<SimStats>({
@@ -146,7 +141,7 @@ export function IsingPage({
     correlationData: null,
   });
 
-  useSimulation({
+  const { getSpins } = useSimulation({
     canvasRef,
     initialSpins: warmSpins,
     betaJ: K1,
@@ -158,6 +153,16 @@ export function IsingPage({
     running,
     onStats: setStats,
   });
+
+  // At h=0: Néel sublattice transform maps (J₁,J₂) equilibrium → (−J₁,J₂) without discarding domain structure.
+  // At h≠0: the transform produces a staggered field rather than the desired uniform field, so reset instead.
+  const handleSetJSign = (v: 1 | -1) => {
+    setJSign(v);
+    setWarmSpins(h === 0
+      ? SpinLattice.applyNeelTransform(getSpins())
+      : new Uint8Array(SpinLattice.createRandom(latticeSize))
+    );
+  };
 
   const phase = inferPhase(stats.magnetization, stats.neelOrderParam, stats.stripeOrderParam, jSign, stats.skPath, latticeSize);
   const tStarForDiagram = isFinite(tStar) ? tStar : 20;
