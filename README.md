@@ -97,10 +97,10 @@ $$
 
 The classical FM↔stripe and Néel↔stripe transitions occur at different $|J_2/J_1|$ values depending on the sign of $J_1$:
 
-| Regime                                  | Boundary                        |
-| --------------------------------------- | ------------------------------- |
-| FM $J_1$ ($> 0$) + AFM $J_2$ → stripe  | $\|J_2/J_1\| = 1/4$            |
-| AFM $J_1$ ($< 0$) + AFM $J_2$ → stripe | $\|J_2/J_1\| = 1/2$            |
+| Regime                                 | Boundary            |
+| -------------------------------------- | ------------------- |
+| FM $J_1$ ($> 0$) + AFM $J_2$ → stripe  | $\|J_2/J_1\| = 1/4$ |
+| AFM $J_1$ ($< 0$) + AFM $J_2$ → stripe | $\|J_2/J_1\| = 1/2$ |
 
 The asymmetry between the two regimes is a feature of the 3D simple-cubic lattice.[^2d-frustration] Near these boundaries the ground-state manifold is highly degenerate; Metropolis dynamics equilibrates very slowly and the simulation may freeze into mismatched domains.
 
