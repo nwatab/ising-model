@@ -336,7 +336,7 @@ export function IsingPage({
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Image src="/github-mark-white.svg" alt="GitHub" width={20} height={20} />
+              <Image src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/github-mark-white.svg`} alt="GitHub" width={20} height={20} />
             </a>
           </div>
           {controlsContent}
@@ -355,7 +355,7 @@ export function IsingPage({
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image src="/github-mark-white.svg" alt="GitHub" width={20} height={20} />
+            <Image src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/github-mark-white.svg`} alt="GitHub" width={20} height={20} />
           </a>
         </div>
         {controlsContent}
