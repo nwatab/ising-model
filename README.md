@@ -108,17 +108,19 @@ The asymmetry between the two regimes is a feature of the 3D simple-cubic lattic
 
 ### Critical slowing down
 
-Near $T^*_c$, the relaxation time scales as $\tau \sim L^z$ with $z \approx 2.04$ for Metropolis local updates. For $L = 128$ this gives $\tau \sim 10^4$ MCS. Within shorter runs, the displayed ξ and C_v reflect **non-equilibrium coarsening** rather than true equilibrium values — observable as drifting M_Néel and ξ. This is a feature, not a bug: the simulation faithfully exhibits one of the central phenomena of continuous phase transitions.
+Near $T^*_c$, the relaxation time scales as $\tau \sim L^z$ with $z \approx 2.04$ for Metropolis local updates. For $L = 128$ this gives $\tau \sim 10^4$ MCS. Within shorter runs, the displayed $\xi$ and $C_v$ reflect **non-equilibrium coarsening** rather than true equilibrium values — observable as drift in $\xi$ and in the regime-appropriate order parameter[^order-parameter]. This is a feature, not a bug: the simulation faithfully exhibits one of the central phenomena of continuous phase transitions.
+
+[^order-parameter]: The order parameter depends on the ground state of the regime: uniform magnetization $M = N^{-1}\sum_i s_i$ in the FM regime ($J_1 > 0$, $|J_2| \lesssim J_1/4$); staggered magnetization $M_\text{Néel} = N^{-1}\sum_i (-1)^{i_x + i_y + i_z} s_i$ in the Néel AFM regime ($J_1 < 0$, $|J_2| \lesssim |J_1|/2$); and stripe-pattern order parameters at modulation wavevectors $(\pi, \pi, 0)$ etc. in the frustrated regions beyond those boundaries.
 
 ## Architecture
 
 ```
 Browser
 ──────────────────
-Random initial configuration
+First load (and on J₁ sign flip):  random spin configuration  sᵢ ∈ {±1}
      ↓
-WASM Metropolis (Rust)
-     ↓
+WASM Metropolis (Rust)  ◄── spin state persists across (T*, J₂, h) changes;
+     ↓                       only the couplings (K₁, K₂, h̃) are updated
 React UI visualization
 ```
 
@@ -128,7 +130,17 @@ React UI visualization
 | UI                 | React                          |
 | Hosting            | Vercel (static export)         |
 
-**WASM is essential, not optional.** Near the critical point, autocorrelation times diverge and the 10–100× speed advantage over pure JS is directly perceptible — without it, equilibrating L = 128 in real time is unusable.
+**WASM is essential, not optional.** Near the critical point, autocorrelation times diverge and the 10–100× speed advantage over pure JS is directly perceptible — without it, equilibrating $L = 128$ in real time is unusable.
+
+### State inheritance across parameter changes
+
+The spin array is initialized randomly only on first load. On any subsequent change of $T^*$, $J_2$, or $h$ — i.e. any continuous parameter within the same $J_1$ sign — the current spin configuration is reused as-is and Metropolis simply continues from it under the new couplings. **The $J_1$ sign toggle (FM ↔ AFM) is the one exception: it triggers a fresh random re-initialization**, because the FM and AFM regimes have disjoint ground-state manifolds and inheriting one as a warm-start for the other would systematically bias the early dynamics.
+
+This split policy has three consequences:
+
+1. **Visual continuity within each $J_1$ branch.** Domain structures evolve smoothly as the user moves through $(T^*, J_2, h)$ space, instead of jumping back to a featureless random state on every slider tick.
+2. **Quasi-static sweep physics.** The trajectory through parameter space mimics a slow physical sweep, so phenomena like hysteresis loops near phase boundaries are naturally reproduced rather than averaged out.
+3. **No hidden cost amortization.** The user sees the actual relaxation toward equilibrium under the new parameters; there is no off-screen "re-equilibration" step that would obscure how slow the dynamics really are near $T^*_c$ or in frustrated regions. After a $J_1$ sign flip in particular, the user observes the full coarsening process from a random start.
 
 ## Development
 
