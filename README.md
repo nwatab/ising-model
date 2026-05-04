@@ -14,14 +14,14 @@ $$
 
 **Lattice:** 3D simple-cubic with periodic boundary conditions. Sites are indexed by $i$ with integer coordinates $(i_x, i_y, i_z) \in \{0, \dots, L-1\}^3$.
 
-| Symbol | Domain | Meaning |
-| ------ | ------ | ------- |
-| $s_i$ | $\{-1, +1\}$ | Ising spin on site $i$ |
-| $\langle ij \rangle$ | NN pairs (each counted once) | Coordination $z_1 = 6$ |
-| $\langle\langle ij \rangle\rangle$ | NNN pairs (face-diagonal, each counted once) | Coordination $z_2 = 12$ |
-| $J_1$ | $\mathbb{R}$ | NN coupling. $J_1 > 0$: FM, $J_1 < 0$: AFM. The UI parameterization $T^* = k_B T/\lvert J_1\rvert$ excludes $J_1 = 0$. |
-| $J_2$ | $\mathbb{R}$ | NNN coupling. Frustration arises when $J_2 < 0$ competes with NN ordering; see "Frustration boundaries" below for the classical critical lines. |
-| $h$ | $\mathbb{R}$ | Uniform external field, in the same energy units as $J_1$ |
+| Symbol                             | Domain                                       | Meaning                                                                                                                                         |
+| ---------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| $s_i$                              | $\{-1, +1\}$                                 | Ising spin on site $i$                                                                                                                          |
+| $\langle ij \rangle$               | NN pairs (each counted once)                 | Coordination $z_1 = 6$                                                                                                                          |
+| $\langle\langle ij \rangle\rangle$ | NNN pairs (face-diagonal, each counted once) | Coordination $z_2 = 12$                                                                                                                         |
+| $J_1$                              | $\mathbb{R}$                                 | NN coupling. $J_1 > 0$: FM, $J_1 < 0$: AFM. The UI parameterization $T^* = k_B T/\lvert J_1\rvert$ excludes $J_1 = 0$.                          |
+| $J_2$                              | $\mathbb{R}$                                 | NNN coupling. Frustration arises when $J_2 < 0$ competes with NN ordering; see "Frustration boundaries" below for the classical critical lines. |
+| $h$                                | $\mathbb{R}$                                 | Uniform external field, in the same energy units as $J_1$                                                                                       |
 
 ### Canonical ensemble
 
@@ -85,11 +85,11 @@ $$
 
 ### Critical points
 
-| Quantity | Value |
-| -------- | ----- |
+| Quantity                 | Value                          |
+| ------------------------ | ------------------------------ |
 | $T^*_c$ at $J_2 = h = 0$ | 4.5115 (MC estimate)[^onsager] |
-| $K_c$ | 0.2217 |
-| Universality class | 3D Ising |
+| $K_c$                    | 0.2217                         |
+| Universality class       | 3D Ising                       |
 
 [^onsager]: For the 2D square lattice, Onsager (1944) gave the exact closed-form solution $T^*_c = 2/\ln(1+\sqrt{2}) \approx 2.2692$. No analogous closed-form solution is known in 3D; the value above is a high-precision Monte Carlo estimate.
 
@@ -97,10 +97,10 @@ $$
 
 The classical FM↔stripe and Néel↔stripe transitions occur at different $|J_2/J_1|$ values depending on the sign of $J_1$:
 
-| Regime | Boundary |
-| ------ | -------- |
-| FM $J_1$ ($> 0$) + AFM $J_2$ → stripe | $|J_2/J_1| = 1/4$ |
-| AFM $J_1$ ($< 0$) + AFM $J_2$ → stripe | $|J_2/J_1| = 1/2$ |
+| Regime                                 | Boundary |
+| -------------------------------------- | -------- | ------- | ------ |
+| FM $J_1$ ($> 0$) + AFM $J_2$ → stripe  | $        | J_2/J_1 | = 1/4$ |
+| AFM $J_1$ ($< 0$) + AFM $J_2$ → stripe | $        | J_2/J_1 | = 1/2$ |
 
 The asymmetry between the two regimes is a feature of the 3D simple-cubic lattice.[^2d-frustration] Near these boundaries the ground-state manifold is highly degenerate; Metropolis dynamics equilibrates very slowly and the simulation may freeze into mismatched domains.
 
