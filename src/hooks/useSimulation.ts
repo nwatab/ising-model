@@ -107,12 +107,16 @@ export function useSimulation({
     histSampleCountRef.current = 0;
     lastParamsForHistRef.current = null;
 
-    // (Re-)initialize WASM lattice from the new JS bytes.
-    // loadWasm() is cached after the first call.
+    // Capture bytes now — newLat === latticeRef.current, so a concurrent
+    // animation tick calling latticeRef.current.set(wl.data()) would mutate
+    // newLat before the .then() callback runs, producing stale WASM state.
+    const bytes = new Uint8Array(newLat);
+    // Null the old WASM immediately so the animation loop falls back to the
+    // JS lattice (which already holds the new state) until WASM is ready.
+    wasmRef.current?.free();
+    wasmRef.current = null;
     loadWasm().then(({ SpinLattice: W }) => {
-      const bytes = new Uint8Array(newLat);
       const seed = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER));
-      wasmRef.current?.free();
       wasmRef.current = W.from_bytes(bytes, newLat.latticeSize, seed);
       kickRef.current();
     });

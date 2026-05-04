@@ -267,6 +267,43 @@ describe("SpinLattice – structureFactorAt", () => {
 
 // -------------------------------------------------------------------------
 
+describe("SpinLattice – applyNeelTransform", () => {
+  it("FM → Néel: all sites satisfy σ'_i = (−1)^(x+y+z) σ_i", () => {
+    const N = 4;
+    const ferro = SpinLattice.createFerro(N);
+    const result = new SpinLattice(SpinLattice.applyNeelTransform(new Uint8Array(ferro)));
+    for (let z = 0; z < N; z++)
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++) {
+          const expected = ((x + y + z) & 1) === 0 ? 1 : -1;
+          expect(result.getSpin({ x, y, z })).toBe(expected);
+        }
+  });
+
+  it("FM → Néel: neelOrderParam = ±1", () => {
+    const N = 4;
+    const result = new SpinLattice(
+      SpinLattice.applyNeelTransform(new Uint8Array(SpinLattice.createFerro(N)))
+    );
+    expect(Math.abs(result.neelOrderParam())).toBeCloseTo(1);
+  });
+
+  it("double application is identity", () => {
+    const N = 4;
+    const original = new Uint8Array(SpinLattice.createFerro(N));
+    const roundTrip = SpinLattice.applyNeelTransform(SpinLattice.applyNeelTransform(original));
+    expect(roundTrip).toEqual(original);
+  });
+
+  it("does not mutate the input array", () => {
+    const N = 4;
+    const input = new Uint8Array(SpinLattice.createFerro(N));
+    const before = input.slice();
+    SpinLattice.applyNeelTransform(input);
+    expect(input).toEqual(before);
+  });
+});
+
 describe("SpinLattice – energyAt", () => {
   it("all-up lattice: flipping any site raises energy by 12 betaJ (6 NN each contributing 2)", () => {
     const N = 4;
