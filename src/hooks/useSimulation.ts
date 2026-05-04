@@ -332,4 +332,6 @@ export function useSimulation({
 
   // Re-render once when the display slice changes while paused.
   useEffect(() => { kickRef.current(); }, [sliceAxis, sliceIndex]);
+
+  return { getSpins: () => new Uint8Array(latticeRef.current) };
 }
