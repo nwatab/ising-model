@@ -12,6 +12,17 @@ H = -J_1 \sum_{\langle ij \rangle} s_i s_j
     - h \sum_i s_i
 $$
 
+**Lattice:** 2D square or 3D simple-cubic with periodic boundary conditions. Sites are indexed by $i$ with integer coordinates $i_\alpha \in \{0, \dots, L-1\}$ in each spatial dimension.
+
+| Symbol | Domain | Meaning |
+| ------ | ------ | ------- |
+| $s_i$ | $\{-1, +1\}$ | Ising spin on site $i$ |
+| $\langle ij \rangle$ | NN pairs (each counted once in the sum) | Coordination $z_1 = 4$ (2D square), $6$ (3D SC) |
+| $\langle\langle ij \rangle\rangle$ | NNN pairs (face-diagonal, each counted once) | Coordination $z_2 = 4$ (2D square), $12$ (3D SC) |
+| $J_1$ | $\mathbb{R}$ | NN coupling. $J_1 > 0$: FM, $J_1 < 0$: AFM. The UI parameterization $T^* = k_B T/\lvert J_1\rvert$ excludes $J_1 = 0$. |
+| $J_2$ | $\mathbb{R}$ | NNN coupling. Frustration arises when $J_2 < 0$ (NNN-AFM) competes with NN ordering; see "Frustration boundaries" below for the classical critical lines. |
+| $h$ | $\mathbb{R}$ | Uniform external field, in the same energy units as $J_1$ |
+
 ### Canonical ensemble
 
 Configurations are sampled from the Boltzmann distribution
