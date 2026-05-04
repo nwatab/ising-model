@@ -125,6 +125,7 @@ export function useSimulation({
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      kickRef.current();
     };
     resize();
     window.addEventListener("resize", resize);
